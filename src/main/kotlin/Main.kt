@@ -20,6 +20,7 @@ import io.ktor.server.netty.Netty
 import io.ktor.util.InternalAPI
 import io.ktor.util.KtorExperimentalAPI
 import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
 import org.slf4j.event.Level
 import utils.AppEnvironment
@@ -41,6 +42,11 @@ fun Application.module() {
         val channelId = "719221812424081479"
         val watchedChannelId = "731480303658598461"
         val client = Kord(botToken)
+
+        client.gateway.events.collect {
+            println("Received event: ${it.event}")
+        }
+
         client.on<ReactionAddEvent> {
             if (channel.id.value == channelId && emoji.name == "✅") {
                 println("check mark detected")
