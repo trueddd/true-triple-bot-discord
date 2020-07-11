@@ -55,7 +55,7 @@ fun Application.module() {
             if (message.content == "!roll") {
                 val resultMessage = message.channel.createMessage("Loading your movies :)")
 
-                val messages = client.rest.channel.getMessages(channelId)
+                val messages = client.rest.channel.getMessages(channelId, limit = 100)
                 messages.filterNot { it.content.contains("✅") }
                     .groupBy { it.reactions?.firstOrNull { reaction -> reaction.emoji.name == "\uD83D\uDC4D" }?.count ?: 0 }
                     .maxBy { it.key }

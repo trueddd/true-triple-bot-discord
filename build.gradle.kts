@@ -24,9 +24,9 @@ dependencies {
     val ktorVersion = "1.3.2"
     val kotlinVersion = "1.3.71"
     val logbackVersion = "1.2.3"
-    val koinVersion = "2.1.5"
-    val postgresDriverVersion = "42.2.2"
-    val exposedVersion = "0.24.1"
+//    val koinVersion = "2.1.5"
+//    val postgresDriverVersion = "42.2.2"
+//    val exposedVersion = "0.24.1"
 
     implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlinVersion")
     implementation("io.ktor:ktor-server-netty:$ktorVersion")
