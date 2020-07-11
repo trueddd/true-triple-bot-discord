@@ -43,10 +43,6 @@ fun Application.module() {
         val watchedChannelId = "731480303658598461"
         val client = Kord(botToken)
 
-        client.gateway.events.collect {
-            println("Received event: ${it.event}")
-        }
-
         client.on<ReactionAddEvent> {
             if (channel.id.value == channelId && emoji.name == "✅") {
                 println("check mark detected")
@@ -76,6 +72,10 @@ fun Application.module() {
             }
         }
         client.login()
+
+        client.gateway.events.collect {
+            println("Received event: ${it.event}")
+        }
     }
 
     install(CallLogging) {
