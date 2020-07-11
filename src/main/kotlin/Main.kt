@@ -1,5 +1,6 @@
 import com.gitlab.kordlib.core.Kord
 import com.gitlab.kordlib.core.behavior.edit
+import com.gitlab.kordlib.core.event.Event
 import com.gitlab.kordlib.core.event.message.MessageCreateEvent
 import com.gitlab.kordlib.core.event.message.ReactionAddEvent
 import com.gitlab.kordlib.core.on
@@ -20,7 +21,6 @@ import io.ktor.server.netty.Netty
 import io.ktor.util.InternalAPI
 import io.ktor.util.KtorExperimentalAPI
 import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
 import org.slf4j.event.Level
 import utils.AppEnvironment
@@ -71,11 +71,10 @@ fun Application.module() {
                 }
             }
         }
-        client.login()
 
-        client.gateway.events.collect {
-            println("Received event: ${it.event}")
-        }
+        client.on<Event> { println("Received event: $this") }
+
+        client.login()
     }
 
     install(CallLogging) {
