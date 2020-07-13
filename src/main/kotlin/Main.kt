@@ -54,20 +54,41 @@ fun Application.module() {
             }
         }
         client.on<MessageCreateEvent> {
-            if (message.content == "!roll") {
-                val resultMessage = message.channel.createMessage("Loading your movies :)")
+            when (message.content) {
+                "!roll" -> {
+                    val resultMessage = message.channel.createMessage("Loading your movies :)")
 
-                val messages = client.rest.channel.getMessages(channelId, limit = 100)
-                messages.filterNot { it.content.contains("✅") }
-                    .groupBy { it.reactions?.firstOrNull { reaction -> reaction.emoji.name == "\uD83D\uDC4D" }?.count ?: 0 }
-                    .maxBy { it.key }
-                    ?.value?.randomOrNull()
-                    ?.let {
-                        resultMessage.edit {
-                            content = "${it.content} by <@!${it.author.id}>"
-                        }
-                    } ?: resultMessage.edit {
-                    content = "Nothing to watch :sad_cat:"
+                    val messages = client.rest.channel.getMessages(channelId, limit = 100)
+                    messages
+                        .groupBy { it.reactions?.firstOrNull { reaction -> reaction.emoji.name == "\uD83D\uDC4D" }?.count ?: 0 }
+                        .maxBy { it.key }
+                        ?.value?.randomOrNull()
+                        ?.let {
+                            resultMessage.edit {
+                                content = "${it.content} by <@!${it.author.id}>"
+                            }
+                        } ?: resultMessage.edit {
+                        content = "Nothing to watch :sad_cat:"
+                    }
+                }
+                "!roll -show" -> {
+                    val resultMessage = message.channel.createMessage("Loading your movies :)")
+
+                    val messages = client.rest.channel.getMessages(channelId, limit = 100)
+                    messages
+                        .groupBy { it.reactions?.firstOrNull { reaction -> reaction.emoji.name == "\uD83D\uDC4D" }?.count ?: 0 }
+                        .maxBy { it.key }
+                        ?.let { entry ->
+                            resultMessage.edit {
+                                val newText = entry.value.mapIndexed { index, it ->
+                                    "${index + 1}. ${it.content} by <@!${it.author.id}>"
+                                }.joinToString("\n")
+                                val votesCount = entry.value.first().reactions?.firstOrNull { it.emoji.name == "\uD83D\uDC4D" }?.count ?: 0
+                                content = "Most voted movies ($votesCount votes each):\n$newText"
+                            }
+                        } ?: resultMessage.edit {
+                        content = "Nothing to watch :sad_cat:"
+                    }
                 }
             }
         }
