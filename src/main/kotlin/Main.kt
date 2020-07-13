@@ -1,5 +1,6 @@
 import com.gitlab.kordlib.core.Kord
-import com.gitlab.kordlib.core.behavior.edit
+import com.gitlab.kordlib.core.behavior.channel.MessageChannelBehavior
+import com.gitlab.kordlib.core.behavior.channel.createMessage
 import com.gitlab.kordlib.core.event.Event
 import com.gitlab.kordlib.core.event.message.MessageCreateEvent
 import com.gitlab.kordlib.core.event.message.ReactionAddEvent
@@ -24,6 +25,7 @@ import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import org.slf4j.event.Level
 import utils.AppEnvironment
+import java.awt.Color
 
 @ExperimentalStdlibApi
 @InternalAPI
@@ -56,39 +58,27 @@ fun Application.module() {
         client.on<MessageCreateEvent> {
             when (message.content) {
                 "!roll" -> {
-                    val resultMessage = message.channel.createMessage("Loading your movies :)")
-
                     val messages = client.rest.channel.getMessages(channelId, limit = 100)
                     messages
                         .groupBy { it.reactions?.firstOrNull { reaction -> reaction.emoji.name == "\uD83D\uDC4D" }?.count ?: 0 }
                         .maxBy { it.key }
                         ?.value?.randomOrNull()
                         ?.let {
-                            resultMessage.edit {
-                                content = "${it.content} by <@!${it.author.id}>"
-                            }
-                        } ?: resultMessage.edit {
-                        content = "Nothing to watch :sad_cat:"
-                    }
+                            message.channel.createBotMessage("**${it.content}** by <@!${it.author.id}> :trophy:")
+                        } ?: message.channel.createBotMessage("Nothing to watch :sad_cat:")
                 }
                 "!roll -show" -> {
-                    val resultMessage = message.channel.createMessage("Loading your movies :)")
-
                     val messages = client.rest.channel.getMessages(channelId, limit = 100)
                     messages
                         .groupBy { it.reactions?.firstOrNull { reaction -> reaction.emoji.name == "\uD83D\uDC4D" }?.count ?: 0 }
                         .maxBy { it.key }
                         ?.let { entry ->
-                            resultMessage.edit {
-                                val newText = entry.value.mapIndexed { index, it ->
-                                    "${index + 1}. ${it.content} by <@!${it.author.id}>"
-                                }.joinToString("\n")
-                                val votesCount = entry.value.first().reactions?.firstOrNull { it.emoji.name == "\uD83D\uDC4D" }?.count ?: 0
-                                content = "Most voted movies ($votesCount votes each):\n$newText"
-                            }
-                        } ?: resultMessage.edit {
-                        content = "Nothing to watch :sad_cat:"
-                    }
+                            val newText = entry.value.mapIndexed { index, it ->
+                                "${index + 1}. ${it.content} by <@!${it.author.id}>"
+                            }.joinToString("\n")
+                            val votesCount = entry.value.first().reactions?.firstOrNull { it.emoji.name == "\uD83D\uDC4D" }?.count ?: 0
+                            message.channel.createBotMessage("Most voted movies ($votesCount votes each):\n$newText")
+                        } ?: message.channel.createBotMessage("Nothing to watch :sad_cat:")
                 }
             }
         }
@@ -117,6 +107,16 @@ fun Application.module() {
 
         get("/") {
             call.respond(HttpStatusCode.OK, "Server is up")
+        }
+    }
+}
+
+private suspend fun MessageChannelBehavior.createBotMessage(message: String, embedColor: Color = Color.MAGENTA) {
+    createMessage {
+        content = ""
+        embed {
+            description = message
+            color = embedColor
         }
     }
 }
