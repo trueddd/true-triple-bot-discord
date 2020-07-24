@@ -61,9 +61,16 @@ fun Application.module() {
                 }
             }
             when (message.content) {
-                "!roll" -> dispatcher.rollMovies(message.channel)
-                "!roll -show" -> dispatcher.showMoviesToRoll(message.channel)
+                "!top" -> dispatcher.showMoviesToRoll(message.channel)
                 "!help" -> dispatcher.showHelp(message.channel)
+                else -> when {
+                    message.content.startsWith("!roll") -> {
+                        dispatcher.rollMovies(message.channel, message.content.contains("-s"))
+                    }
+                    message.content.startsWith("!search") -> {
+                        dispatcher.searchForMovie(message.channel, message.content.removePrefix("!search").trim())
+                    }
+                }
             }
         }
 
