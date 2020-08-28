@@ -4,12 +4,16 @@ import com.gitlab.kordlib.core.Kord
 import com.gitlab.kordlib.core.behavior.channel.MessageChannelBehavior
 import com.gitlab.kordlib.core.behavior.channel.createEmbed
 import com.gitlab.kordlib.core.behavior.channel.createMessage
+import com.gitlab.kordlib.core.entity.Message
+import com.gitlab.kordlib.core.entity.ReactionEmoji
 import data.Movie
-import data.egs.Element
+import data.egs.GiveAwayGame
 import io.ktor.util.KtorExperimentalAPI
 import java.awt.Color
 import java.io.Closeable
 import java.text.SimpleDateFormat
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 import java.util.*
 import kotlin.Exception
 
@@ -31,7 +35,7 @@ class Dispatcher(private val client: Kord) : Closeable {
     @ExperimentalStdlibApi
     suspend fun rollMovies(channel: MessageChannelBehavior, withSearch: Boolean = false) {
         getMovieList()
-            .maxBy { it.key }
+            .maxByOrNull { it.key }
             ?.value?.randomOrNull()
             ?.let {
                 channel.createBotMessage("**${it.content}** от ${it.author.getMention()} :trophy:")
@@ -43,7 +47,7 @@ class Dispatcher(private val client: Kord) : Closeable {
 
     suspend fun showMoviesToRoll(channel: MessageChannelBehavior) {
         getMovieList()
-            .maxBy { it.key }
+            .maxByOrNull { it.key }
             ?.let { entry ->
                 val newText = entry.value.mapIndexed { index, it ->
                     "${index + 1}. ${it.content} от ${it.author.getMention()}"
@@ -125,31 +129,31 @@ class Dispatcher(private val client: Kord) : Closeable {
         }
     }
 
-    suspend fun showGames(channel: MessageChannelBehavior, elements: List<Element>) {
+    suspend fun showGames(channelId: String, elements: List<GiveAwayGame>) {
         if (elements.isEmpty()) {
-            channel.createErrorMessage("Игры не раздают")
+            createErrorMessage(channelId, "Игры не раздают")
             return
         }
-        channel.createEmbed {
-            color = Color.MAGENTA
-            author {
-                icon = "https://upload.wikimedia.org/wikipedia/commons/thumb/3/31/Epic_Games_logo.svg/1200px-Epic_Games_logo.svg.png"
-                name = "Игрульки, которые можно сейчас забрать"
-                url = "https://www.epicgames.com/store/en-US/free-games"
-            }
-            elements.forEach {
-                field {
-                    val dates = it.promotions?.current?.firstOrNull()?.offers?.firstOrNull()?.let { offer -> offer.startDate.egsDate() to offer.endDate.egsDate() }
-                        ?: it.promotions?.upcoming?.firstOrNull()?.offers?.minBy { item -> item.startDate }?.let { offer -> offer.startDate.egsDate() to offer.endDate.egsDate() }
-                    val now = Date()
-                    name = it.title
-                    value = when {
-                        dates == null -> "Free"
-                        now.before(dates.first) -> "с ${dates.first.format()}"
-                        now.after(dates.first) && now.before(dates.second) -> "до ${dates.second.format()}"
-                        else -> "Free"
+        client.rest.channel.createMessage(channelId) {
+            embed {
+                color = Color.MAGENTA
+                author {
+                    icon = "https://upload.wikimedia.org/wikipedia/commons/thumb/3/31/Epic_Games_logo.svg/1200px-Epic_Games_logo.svg.png"
+                    name = "Игрульки, которые можно сейчас забрать"
+                    url = "https://www.epicgames.com/store/en-US/free-games"
+                }
+                elements.forEach {
+                    field {
+                        val now = LocalDateTime.now()
+                        name = it.title
+                        value = when {
+                            it.promotion == null -> "Free"
+                            now.isBefore(it.promotion.start) -> "с ${it.promotion.start.format()}"
+                            now.isAfter(it.promotion.start) && now.isBefore(it.promotion.end) -> "до ${it.promotion.end.format()}"
+                            else -> "Free"
+                        }
+                        inline = true
                     }
-                    inline = true
                 }
             }
         }
@@ -185,19 +189,31 @@ class Dispatcher(private val client: Kord) : Closeable {
         }
     }
 
-    private fun String.egsDate(): Date {
-        return try {
-            val inputFormatter = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")
-            inputFormatter.parse(this)
-        } catch (e: Exception) {
-            e.printStackTrace()
-            Date()
+    suspend fun createErrorMessage(channelId: String, message: String) {
+        client.rest.channel.createMessage(channelId) {
+            embed {
+                color = Color.MAGENTA
+                author {
+                    icon = "https://cdn.discordapp.com/emojis/722871552290455563.png?v=1"
+                    name = message
+                }
+            }
         }
     }
 
-    private fun Date.format(pattern: String = "MMM d"): String {
+    suspend fun markRequest(message: Message, isSuccessful: Boolean) {
+        if (isSuccessful) {
+            message.deleteOwnReaction(ReactionEmoji.Unicode("❌"))
+            message.addReaction(ReactionEmoji.Unicode("\uD83C\uDD97"))
+        } else {
+            message.deleteOwnReaction(ReactionEmoji.Unicode("\uD83C\uDD97"))
+            message.addReaction(ReactionEmoji.Unicode("❌"))
+        }
+    }
+
+    private fun LocalDateTime.format(pattern: String = "MMM d"): String {
         return try {
-            val outFormatter = SimpleDateFormat(pattern, Locale.UK)
+            val outFormatter = DateTimeFormatter.ofPattern(pattern, Locale.UK)
             outFormatter.format(this)
         } catch (e: Exception) {
             e.printStackTrace()

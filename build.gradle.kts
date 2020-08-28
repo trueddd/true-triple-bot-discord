@@ -1,6 +1,6 @@
 plugins {
     application
-    kotlin("jvm") version "1.3.71"
+    kotlin("jvm") version "1.4.0"
     id("com.github.johnrengelman.shadow") version "5.0.0"
 }
 
@@ -21,11 +21,11 @@ repositories {
 }
 
 dependencies {
-    val ktorVersion = "1.3.2"
-    val kotlinVersion = "1.3.71"
+    val ktorVersion = "1.4.0"
+    val kotlinVersion = "1.4.0"
     val logbackVersion = "1.2.3"
     val postgresDriverVersion = "42.2.2"
-    val exposedVersion = "0.24.1"
+    val exposedVersion = "0.27.1"
 
     implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlinVersion")
     implementation("io.ktor:ktor-server-netty:$ktorVersion")
@@ -37,7 +37,7 @@ dependencies {
     implementation("io.ktor:ktor-client-json:$ktorVersion")
     implementation("io.ktor:ktor-client-gson:$ktorVersion")
 
-    implementation("com.gitlab.kordlib.kord:kord-core:0.5.7")
+    implementation("com.gitlab.kordlib.kord:kord-core:0.6.1")
 
     implementation("org.postgresql:postgresql:$postgresDriverVersion")
     implementation("org.jetbrains.exposed", "exposed-core", exposedVersion)

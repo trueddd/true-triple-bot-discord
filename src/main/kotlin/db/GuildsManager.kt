@@ -2,24 +2,10 @@ package db
 
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.transactions.transaction
-import utils.AppEnvironment
-import java.net.URI
 
-class GuildsManager {
-
-    private val database: Database by lazy {
-        val uri = URI(AppEnvironment.getDatabaseUrl())
-        val username = uri.userInfo.split(":")[0]
-        val password = uri.userInfo.split(":")[1]
-        val dbUrl = "jdbc:postgresql://${uri.host}:${uri.port}${uri.path}?sslmode=require"
-        Database.connect(dbUrl, "org.postgresql.Driver", username, password).also {
-            println("Connecting DB at ${it.url}")
-            transaction(it) {
-                println("Creating tables")
-                SchemaUtils.create(Guilds)
-            }
-        }
-    }
+class GuildsManager(
+    private val database: Database
+) {
 
     fun getMoviesListChannel(guildId: String): String? {
         return transaction(database) {
@@ -27,17 +13,17 @@ class GuildsManager {
         }
     }
 
-    fun setMoviesListChannel(guildId: String, channelId: String) {
+    fun setMoviesListChannel(guildId: String, channelId: String?): Boolean {
         return transaction(database) {
             if (Guilds.select { Guilds.id eq guildId }.singleOrNull() != null) {
                 Guilds.update({ Guilds.id eq guildId }) {
                     it[moviesListChannelId] = channelId
-                }
+                } > 0
             } else {
                 Guilds.insert {
                     it[id] = guildId
                     it[moviesListChannelId] = channelId
-                }
+                }.resultedValues?.size?.let { it > 0 } ?: false
             }
         }
     }
@@ -48,17 +34,17 @@ class GuildsManager {
         }
     }
 
-    fun setWatchedMoviesListChannel(guildId: String, channelId: String) {
+    fun setWatchedMoviesListChannel(guildId: String, channelId: String?): Boolean {
         return transaction(database) {
             if (Guilds.select { Guilds.id eq guildId }.singleOrNull() != null) {
                 Guilds.update({ Guilds.id eq guildId }) {
                     it[watchedMoviesChannelId] = channelId
-                }
+                } > 0
             } else {
                 Guilds.insert {
                     it[id] = guildId
                     it[watchedMoviesChannelId] = channelId
-                }
+                }.resultedValues?.size?.let { it > 0 } ?: false
             }
         }
     }
@@ -76,17 +62,17 @@ class GuildsManager {
 //        }
 //    }
 
-    fun setGamesChannel(guildId: String, channelId: String) {
+    fun setGamesChannel(guildId: String, channelId: String?): Boolean {
         return transaction(database) {
             if (Guilds.select { Guilds.id eq guildId }.singleOrNull() != null) {
                 Guilds.update({ Guilds.id eq guildId }) {
                     it[gamesChannelId] = channelId
-                }
+                } > 0
             } else {
                 Guilds.insert {
                     it[id] = guildId
                     it[gamesChannelId] = channelId
-                }
+                }.resultedValues?.size?.let { it > 0 } ?: false
             }
         }
     }

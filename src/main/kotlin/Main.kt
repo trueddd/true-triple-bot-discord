@@ -2,6 +2,8 @@ import com.gitlab.kordlib.core.Kord
 import com.gitlab.kordlib.core.event.message.MessageCreateEvent
 import com.gitlab.kordlib.core.event.message.ReactionAddEvent
 import com.gitlab.kordlib.core.on
+import data.egs.GiveAwayGames
+import db.Guilds
 import db.GuildsManager
 import io.ktor.application.Application
 import io.ktor.application.call
@@ -21,8 +23,12 @@ import io.ktor.util.InternalAPI
 import io.ktor.util.KtorExperimentalAPI
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
+import org.jetbrains.exposed.sql.Database
+import org.jetbrains.exposed.sql.SchemaUtils
+import org.jetbrains.exposed.sql.transactions.transaction
 import org.slf4j.event.Level
 import utils.AppEnvironment
+import java.net.URI
 
 @ExperimentalStdlibApi
 @InternalAPI
@@ -36,8 +42,21 @@ fun main(args: Array<String>) {
 @KtorExperimentalAPI
 fun Application.module() {
 
-    val guildsManager = GuildsManager()
-    val epicGamesService = EpicGamesService()
+    val database: Database = run {
+        val uri = URI(AppEnvironment.getDatabaseUrl())
+        val username = uri.userInfo.split(":")[0]
+        val password = uri.userInfo.split(":")[1]
+        val dbUrl = "jdbc:postgresql://${uri.host}:${uri.port}${uri.path}?sslmode=require"
+        Database.connect(dbUrl, "org.postgresql.Driver", username, password).also {
+            println("Connecting DB at ${it.url}")
+            transaction(it) {
+                println("Creating tables")
+                SchemaUtils.create(Guilds, GiveAwayGames)
+            }
+        }
+    }
+    val guildsManager = GuildsManager(database)
+    val epicGamesService = EpicGamesService(database)
 
     GlobalScope.launch {
         val client = Kord(AppEnvironment.getBotSecret())
@@ -60,19 +79,40 @@ fun Application.module() {
             }
             when (val messageText = message.content.removePrefix("ttb!")) {
                 "top" -> {
-                    if (guildsManager.getMoviesListChannel(guildId?.value ?: "") == null)
-                        return@on
-                    dispatcher.showMoviesToRoll(message.channel)
+                    if (guildsManager.getMoviesListChannel(guildId?.value ?: "") == null) {
+                        dispatcher.createErrorMessage(message.channelId.value, "Не установлен канал со списком фильмов (`ttb!set-movies` в канале с фильмами)")
+                    } else {
+                        dispatcher.showMoviesToRoll(message.channel)
+                    }
                 }
                 "movies-help" -> dispatcher.showMoviesHelp(message.channel)
-                "set-movies" -> guildsManager.setMoviesListChannel(guildId?.value ?: "", message.channelId.value)
-                "set-watched" -> guildsManager.setWatchedMoviesListChannel(guildId?.value ?: "", message.channelId.value)
-                "set-games" -> guildsManager.setGamesChannel(guildId?.value ?: "", message.channelId.value)
+                "set-movies" -> {
+                    val changed = guildsManager.setMoviesListChannel(guildId?.value ?: "", message.channelId.value)
+                    dispatcher.markRequest(message, changed)
+                }
+                "unset-movies" -> {
+                    val changed = guildsManager.setMoviesListChannel(guildId?.value ?: "", null)
+                    dispatcher.markRequest(message, changed)
+                }
+                "set-watched" -> {
+                    val changed = guildsManager.setWatchedMoviesListChannel(guildId?.value ?: "", message.channelId.value)
+                    dispatcher.markRequest(message, changed)
+                }
+                "unset-watched" -> {
+                    val changed = guildsManager.setWatchedMoviesListChannel(guildId?.value ?: "", null)
+                    dispatcher.markRequest(message, changed)
+                }
+                "set-games" -> {
+                    val changed = guildsManager.setGamesChannel(guildId?.value ?: "", message.channelId.value)
+                    dispatcher.markRequest(message, changed)
+                }
+                "unset-games" -> {
+                    val changed = guildsManager.setGamesChannel(guildId?.value ?: "", null)
+                    dispatcher.markRequest(message, changed)
+                }
                 "egs-free" -> {
-                    if (guildsManager.getGamesChannelId(guildId?.value ?: "") == null)
-                        return@on
                     val games = epicGamesService.load()
-                    dispatcher.showGames(message.channel, games)
+                    dispatcher.showGames(message.channel.id.value, games)
                 }
                 else -> when {
                     messageText.startsWith("roll") -> {
