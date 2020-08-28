@@ -1,1 +1,1 @@
-rootProject.name = "movie-chooser"
+rootProject.name = "true-triple-bot"

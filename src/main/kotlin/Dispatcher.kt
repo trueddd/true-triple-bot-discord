@@ -5,12 +5,13 @@ import com.gitlab.kordlib.core.behavior.channel.MessageChannelBehavior
 import com.gitlab.kordlib.core.behavior.channel.createEmbed
 import com.gitlab.kordlib.core.behavior.channel.createMessage
 import data.Movie
+import data.egs.Element
 import io.ktor.util.KtorExperimentalAPI
 import java.awt.Color
 import java.io.Closeable
-import java.lang.Exception
 import java.text.SimpleDateFormat
 import java.util.*
+import kotlin.Exception
 
 @KtorExperimentalAPI
 class Dispatcher(private val client: Kord) : Closeable {
@@ -52,7 +53,7 @@ class Dispatcher(private val client: Kord) : Closeable {
             } ?: channel.createErrorMessage("Нечего смотреть")
     }
 
-    suspend fun showHelp(channel: MessageChannelBehavior) {
+    suspend fun showMoviesHelp(channel: MessageChannelBehavior) {
         channel.createEmbed {
             color = Color.MAGENTA
             title = "Manual :notebook:"
@@ -61,18 +62,18 @@ class Dispatcher(private val client: Kord) : Closeable {
                 value = "В выборку попадают первые 100 фильмов из канала ${moviesChannelId.getChannelMention()}. Фильм выбирается по наибольшему количеству лайков ( :thumbsup: ) в реакциях."
             }
             field {
-                name = "`!top`"
+                name = "`ttb!top`"
                 value = "Показывает список фильмов с максимальным количеством лайков."
                 inline = true
             }
             field {
-                name = "`!search`"
-                value = "Ищет фильм на Кинопоиске. Пример использования: `!search Геи-ниггеры из далёкого космоса`."
+                name = "`ttb!search`"
+                value = "Ищет фильм на Кинопоиске. Пример использования: `ttb!search Геи-ниггеры из далёкого космоса`."
                 inline = true
             }
             field {
-                name = "`!roll`"
-                value = "Выбирает случайный фильм из выборки, которую можно посмотреть по комманде `!top`. Если ввести параметр `-s`, бот найдёт выбранный фильм на Кинопоиске."
+                name = "`ttb!roll`"
+                value = "Выбирает случайный фильм из выборки, которую можно посмотреть по комманде `ttb!top`. Если ввести параметр `-s`, бот найдёт выбранный фильм на Кинопоиске."
                 inline = true
             }
         }
@@ -124,6 +125,36 @@ class Dispatcher(private val client: Kord) : Closeable {
         }
     }
 
+    suspend fun showGames(channel: MessageChannelBehavior, elements: List<Element>) {
+        if (elements.isEmpty()) {
+            channel.createErrorMessage("Игры не раздают")
+            return
+        }
+        channel.createEmbed {
+            color = Color.MAGENTA
+            author {
+                icon = "https://upload.wikimedia.org/wikipedia/commons/thumb/3/31/Epic_Games_logo.svg/1200px-Epic_Games_logo.svg.png"
+                name = "Игрульки, которые можно сейчас забрать"
+                url = "https://www.epicgames.com/store/en-US/free-games"
+            }
+            elements.forEach {
+                field {
+                    val dates = it.promotions?.current?.firstOrNull()?.offers?.firstOrNull()?.let { offer -> offer.startDate.egsDate() to offer.endDate.egsDate() }
+                        ?: it.promotions?.upcoming?.firstOrNull()?.offers?.minBy { item -> item.startDate }?.let { offer -> offer.startDate.egsDate() to offer.endDate.egsDate() }
+                    val now = Date()
+                    name = it.title
+                    value = when {
+                        dates == null -> "Free"
+                        now.before(dates.first) -> "с ${dates.first.format()}"
+                        now.after(dates.first) && now.before(dates.second) -> "до ${dates.second.format()}"
+                        else -> "Free"
+                    }
+                    inline = true
+                }
+            }
+        }
+    }
+
     private suspend fun getMovie(name: String): Pair<String, Movie?>? {
         return googleService.load(name)?.items?.firstOrNull {
             it.pageMap.movies?.firstOrNull() != null
@@ -131,13 +162,6 @@ class Dispatcher(private val client: Kord) : Closeable {
             val link = it.link
             val movie = it.pageMap.movies?.firstOrNull()
             link to movie
-        }
-    }
-
-    suspend fun answerUnauthorized(channel: MessageChannelBehavior) {
-        channel.createEmbed {
-            color = Color.MAGENTA
-            description = "[Click me](https://www.youtube.com/watch?v=koOqw-trpLw)"
         }
     }
 
@@ -158,6 +182,26 @@ class Dispatcher(private val client: Kord) : Closeable {
                 icon = "https://cdn.discordapp.com/emojis/722871552290455563.png?v=1"
                 name = message
             }
+        }
+    }
+
+    private fun String.egsDate(): Date {
+        return try {
+            val inputFormatter = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")
+            inputFormatter.parse(this)
+        } catch (e: Exception) {
+            e.printStackTrace()
+            Date()
+        }
+    }
+
+    private fun Date.format(pattern: String = "MMM d"): String {
+        return try {
+            val outFormatter = SimpleDateFormat(pattern, Locale.UK)
+            outFormatter.format(this)
+        } catch (e: Exception) {
+            e.printStackTrace()
+            "TBA"
         }
     }
 

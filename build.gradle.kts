@@ -24,6 +24,8 @@ dependencies {
     val ktorVersion = "1.3.2"
     val kotlinVersion = "1.3.71"
     val logbackVersion = "1.2.3"
+    val postgresDriverVersion = "42.2.2"
+    val exposedVersion = "0.24.1"
 
     implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlinVersion")
     implementation("io.ktor:ktor-server-netty:$ktorVersion")
@@ -36,6 +38,12 @@ dependencies {
     implementation("io.ktor:ktor-client-gson:$ktorVersion")
 
     implementation("com.gitlab.kordlib.kord:kord-core:0.5.7")
+
+    implementation("org.postgresql:postgresql:$postgresDriverVersion")
+    implementation("org.jetbrains.exposed", "exposed-core", exposedVersion)
+    implementation("org.jetbrains.exposed", "exposed-dao", exposedVersion)
+    implementation("org.jetbrains.exposed", "exposed-jdbc", exposedVersion)
+    implementation("org.jetbrains.exposed", "exposed-java-time", exposedVersion)
 }
 
 sourceSets {

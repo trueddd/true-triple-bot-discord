@@ -1,1 +1,1 @@
-web: java $JAVA_OPTS -Dserver.port=$PORT -jar build/libs/movie-chooser-*.jar
+web: java $JAVA_OPTS -Dserver.port=$PORT -jar build/libs/true-triple-bot-*.jar

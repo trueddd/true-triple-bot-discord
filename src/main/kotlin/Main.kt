@@ -2,6 +2,7 @@ import com.gitlab.kordlib.core.Kord
 import com.gitlab.kordlib.core.event.message.MessageCreateEvent
 import com.gitlab.kordlib.core.event.message.ReactionAddEvent
 import com.gitlab.kordlib.core.on
+import db.GuildsManager
 import io.ktor.application.Application
 import io.ktor.application.call
 import io.ktor.application.install
@@ -35,17 +36,17 @@ fun main(args: Array<String>) {
 @KtorExperimentalAPI
 fun Application.module() {
 
+    val guildsManager = GuildsManager()
+    val epicGamesService = EpicGamesService()
+
     GlobalScope.launch {
-        val botToken = "NzMxMjgzNTUxNjQyOTc2MjU2.XwjzIQ.NywBGhB4wcRy_PiSal04mQtrF3c"
-        val channelId = "719221812424081479"
-        val watchedChannelId = "731480303658598461"
-        val niridId = "422355618914107392"
-        val client = Kord(botToken)
+        val client = Kord(AppEnvironment.getBotSecret())
         val dispatcher = Dispatcher(client)
 
         client.on<ReactionAddEvent> {
-            if (channel.id.value == channelId && emoji.name == "✅") {
+            if (guildsManager.getMoviesListChannel(guildId?.value ?: "") == channel.id.value && emoji.name == "✅") {
                 println("check mark detected")
+                val watchedChannelId = guildsManager.getWatchedMoviesChannelId(guildId?.value ?: "") ?: return@on
                 val movieMessage = message.asMessage()
                 message.delete()
                 client.rest.channel.createMessage(watchedChannelId) {
@@ -54,21 +55,33 @@ fun Application.module() {
             }
         }
         client.on<MessageCreateEvent> {
-            if (message.content.startsWith("!")) {
-                if (message.author?.id?.value == niridId) {
-                    dispatcher.answerUnauthorized(message.channel)
-                    return@on
-                }
+            if (!message.content.startsWith("ttb!")) {
+                return@on
             }
-            when (message.content) {
-                "!top" -> dispatcher.showMoviesToRoll(message.channel)
-                "!help" -> dispatcher.showHelp(message.channel)
+            when (val messageText = message.content.removePrefix("ttb!")) {
+                "top" -> {
+                    if (guildsManager.getMoviesListChannel(guildId?.value ?: "") == null)
+                        return@on
+                    dispatcher.showMoviesToRoll(message.channel)
+                }
+                "movies-help" -> dispatcher.showMoviesHelp(message.channel)
+                "set-movies" -> guildsManager.setMoviesListChannel(guildId?.value ?: "", message.channelId.value)
+                "set-watched" -> guildsManager.setWatchedMoviesListChannel(guildId?.value ?: "", message.channelId.value)
+                "set-games" -> guildsManager.setGamesChannel(guildId?.value ?: "", message.channelId.value)
+                "egs-free" -> {
+                    if (guildsManager.getGamesChannelId(guildId?.value ?: "") == null)
+                        return@on
+                    val games = epicGamesService.load()
+                    dispatcher.showGames(message.channel, games)
+                }
                 else -> when {
-                    message.content.startsWith("!roll") -> {
-                        dispatcher.rollMovies(message.channel, message.content.contains("-s"))
+                    messageText.startsWith("roll") -> {
+                        if (guildsManager.getMoviesListChannel(guildId?.value ?: "") == null)
+                            return@on
+                        dispatcher.rollMovies(message.channel, messageText.contains("-s"))
                     }
-                    message.content.startsWith("!search") -> {
-                        dispatcher.searchForMovie(message.channel, message.content.removePrefix("!search").trim())
+                    messageText.startsWith("search") -> {
+                        dispatcher.searchForMovie(message.channel, messageText.removePrefix("search").trim())
                     }
                 }
             }
