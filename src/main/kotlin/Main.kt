@@ -1,4 +1,5 @@
 import com.gitlab.kordlib.core.Kord
+import com.gitlab.kordlib.core.event.gateway.ReadyEvent
 import com.gitlab.kordlib.core.event.message.MessageCreateEvent
 import com.gitlab.kordlib.core.event.message.ReactionAddEvent
 import com.gitlab.kordlib.core.on
@@ -22,6 +23,7 @@ import io.ktor.server.netty.Netty
 import io.ktor.util.InternalAPI
 import io.ktor.util.KtorExperimentalAPI
 import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.SchemaUtils
@@ -29,6 +31,7 @@ import org.jetbrains.exposed.sql.transactions.transaction
 import org.slf4j.event.Level
 import utils.AppEnvironment
 import java.net.URI
+import java.time.Duration
 
 @ExperimentalStdlibApi
 @InternalAPI
@@ -124,6 +127,21 @@ fun Application.module() {
                         dispatcher.searchForMovie(message.channel, messageText.removePrefix("search").trim())
                     }
                 }
+            }
+        }
+
+        client.on<ReadyEvent> {
+            launch {
+                do {
+                    val observing = guildsManager.getGamesChannelsIds()
+                    val games = epicGamesService.load()
+                    observing
+                        .forEach {
+                            dispatcher.showGames(it.second, games)
+                        }
+
+                    delay(Duration.ofHours(24).toMillis())
+                } while (true)
             }
         }
 

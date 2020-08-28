@@ -49,18 +49,15 @@ class GuildsManager(
         }
     }
 
-    fun getGamesChannelId(guildId: String): String? {
+    fun getGamesChannelsIds(): List<Pair<String, String>> {
         return transaction(database) {
-            Guilds.select { Guilds.id eq guildId }.singleOrNull()?.getOrNull(Guilds.gamesChannelId)
+            Guilds.selectAll().mapNotNull {
+                val id = it.getOrNull(Guilds.id) ?: return@mapNotNull null
+                val channelId = it.getOrNull(Guilds.gamesChannelId) ?: return@mapNotNull null
+                id to channelId
+            }
         }
     }
-
-//    TODO: add scheduler
-//    fun getGamesChannelsIds(): List<String> {
-//        return transaction(database) {
-//            Guilds.selectAll().mapNotNull { it.getOrNull(Guilds.gamesChannelId) }
-//        }
-//    }
 
     fun setGamesChannel(guildId: String, channelId: String?): Boolean {
         return transaction(database) {

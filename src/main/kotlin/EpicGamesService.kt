@@ -27,8 +27,8 @@ class EpicGamesService(
 
     private val baseUrl = "https://store-site-backend-static.ak.epicgames.com/freeGamesPromotions?locale=en-US"
 
-    suspend fun load(): List<GiveAwayGame> {
-        val cachedGames = transaction(database) {
+    suspend fun load(forceRefresh: Boolean = false): List<GiveAwayGame> {
+        val cachedGames = if (forceRefresh) null else transaction(database) {
             GiveAwayGames.selectAll().map { it.toGiveAwayGame() }.let { games ->
                 games.firstOrNull()?.lastUpdated?.let {
                     if (ChronoUnit.HOURS.between(LocalDateTime.now(), it) < 3) games else null
