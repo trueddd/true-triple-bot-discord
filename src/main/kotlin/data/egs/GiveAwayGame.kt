@@ -6,7 +6,8 @@ data class GiveAwayGame(
     val id: String,
     val title: String,
     val promotion: OfferDates?,
-    val lastUpdated: LocalDateTime
+    val lastUpdated: LocalDateTime,
+    val productSlug: String?
 )
 
 data class OfferDates(

@@ -32,6 +32,8 @@ import org.slf4j.event.Level
 import utils.AppEnvironment
 import java.net.URI
 import java.time.Duration
+import java.time.LocalDateTime
+import java.time.temporal.ChronoUnit
 
 @ExperimentalStdlibApi
 @InternalAPI
@@ -132,6 +134,23 @@ fun Application.module() {
 
         client.on<ReadyEvent> {
             launch {
+                val startDelay = LocalDateTime.now()
+                    .withHour(21)
+                    .withMinute(0)
+                    .withSecond(0)
+                    .let {
+                        val temp = if (LocalDateTime.now().hour >= 21) {
+                            it.plusDays(1)
+                        } else {
+                            it
+                        }
+                        println("Next notify is scheduled on $it")
+                        return@let ChronoUnit.MILLIS.between(LocalDateTime.now(), temp).also { d ->
+                            println("Delay is $d")
+                        }
+                    }
+                epicGamesService.load(forceRefresh = true)
+                delay(startDelay)
                 do {
                     val observing = guildsManager.getGamesChannelsIds()
                     val games = epicGamesService.load()

@@ -46,6 +46,7 @@ class EpicGamesService(
                         it[offerStartDate] = game.promotion?.start
                         it[offerEndDate] = game.promotion?.end
                         it[lastUpdated] = game.lastUpdated
+                        it[productSlug] = game.productSlug
                     }
                 }
             }
@@ -63,7 +64,7 @@ class EpicGamesService(
             elements.map {
                 val dates = it.promotions?.current?.firstOrNull()?.offers?.firstOrNull()?.let { offer -> offer.startDate.egsDate() to offer.endDate.egsDate() }
                     ?: it.promotions?.upcoming?.firstOrNull()?.offers?.minByOrNull { item -> item.startDate }?.let { offer -> offer.startDate.egsDate() to offer.endDate.egsDate() }
-                GiveAwayGame(it.id, it.title, dates?.let { d -> OfferDates(d.first.toLocalDateTime(), d.second.toLocalDateTime()) }, LocalDateTime.now())
+                GiveAwayGame(it.id, it.title, dates?.let { d -> OfferDates(d.first.toLocalDateTime(), d.second.toLocalDateTime()) }, LocalDateTime.now(), it.productSlug)
             }
         } catch (e: Exception) {
             e.printStackTrace()

@@ -10,6 +10,7 @@ object GiveAwayGames : Table() {
     val offerStartDate = datetime("offerStartDate").nullable()
     val offerEndDate = datetime("offerEndDate").nullable()
     val lastUpdated = datetime("lastUpdated")
+    val productSlug = varchar("productSlug", 64).nullable()
 
     override val tableName = "give_away_games"
 
@@ -25,7 +26,8 @@ object GiveAwayGames : Table() {
             this[id].toString(),
             this[title].toString(),
             offerDates,
-            this[lastUpdated]
+            this[lastUpdated],
+            this[productSlug]
         )
     }
 }

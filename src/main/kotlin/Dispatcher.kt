@@ -146,12 +146,17 @@ class Dispatcher(private val client: Kord) : Closeable {
                     field {
                         val now = LocalDateTime.now()
                         name = it.title
-                        value = when {
+                        val date = when {
                             it.promotion == null -> "Free"
                             now.isBefore(it.promotion.start) -> "с ${it.promotion.start.format()}"
                             now.isAfter(it.promotion.start) && now.isBefore(it.promotion.end) -> "до ${it.promotion.end.format()}"
                             else -> "Free"
                         }
+                        val link = when {
+                            it.productSlug.isNullOrEmpty() -> "https://www.epicgames.com/store/en-US/free-games"
+                            else -> "https://www.epicgames.com/store/en-US/product/${it.productSlug}"
+                        }
+                        value = "[$date]($link)"
                         inline = true
                     }
                 }
