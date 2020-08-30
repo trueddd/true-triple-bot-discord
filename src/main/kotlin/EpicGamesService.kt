@@ -27,6 +27,31 @@ class EpicGamesService(
 
     private val baseUrl = "https://store-site-backend-static.ak.epicgames.com/freeGamesPromotions?locale=en-US"
 
+    suspend fun loadDistinct(): List<GiveAwayGame>? {
+        val cachedGames = transaction(database) {
+            GiveAwayGames.selectAll().map { it.toGiveAwayGame() }
+        }
+        val newGames = loadFromNetwork()
+        if (!newGames.isSame(cachedGames)) {
+            transaction(database) {
+                GiveAwayGames.deleteAll()
+                newGames.forEach { game ->
+                    GiveAwayGames.insert {
+                        it[id] = game.id
+                        it[title] = game.title
+                        it[offerStartDate] = game.promotion?.start
+                        it[offerEndDate] = game.promotion?.end
+                        it[lastUpdated] = game.lastUpdated
+                        it[productSlug] = game.productSlug
+                    }
+                }
+            }
+            return newGames
+        } else {
+            return null
+        }
+    }
+
     suspend fun load(forceRefresh: Boolean = false): List<GiveAwayGame> {
         val cachedGames = if (forceRefresh) null else transaction(database) {
             GiveAwayGames.selectAll().map { it.toGiveAwayGame() }.let { games ->
@@ -70,5 +95,12 @@ class EpicGamesService(
             e.printStackTrace()
             emptyList()
         }
+    }
+
+    private fun <T> Iterable<T>.isSame(other: Iterable<T>): Boolean {
+        if (this.count() != other.count()) {
+            return false
+        }
+        return this.all { item -> other.contains(item) }
     }
 }

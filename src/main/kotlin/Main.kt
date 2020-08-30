@@ -135,11 +135,11 @@ fun Application.module() {
         client.on<ReadyEvent> {
             launch {
                 val startDelay = LocalDateTime.now()
-                    .withHour(21)
+                    .withHour(18)
                     .withMinute(0)
                     .withSecond(0)
                     .let {
-                        val temp = if (LocalDateTime.now().hour >= 21) {
+                        val temp = if (LocalDateTime.now().hour >= 18) {
                             it.plusDays(1)
                         } else {
                             it
@@ -149,15 +149,15 @@ fun Application.module() {
                             println("Delay is $d")
                         }
                     }
-                epicGamesService.load(forceRefresh = true)
                 delay(startDelay)
                 do {
-                    val observing = guildsManager.getGamesChannelsIds()
-                    val games = epicGamesService.load()
-                    observing
-                        .forEach {
-                            dispatcher.showGames(it.second, games)
-                        }
+                    epicGamesService.loadDistinct()?.let { games ->
+                        val observing = guildsManager.getGamesChannelsIds()
+                        observing
+                            .forEach {
+                                dispatcher.showGames(it.second, games)
+                            }
+                    }
 
                     delay(Duration.ofHours(24).toMillis())
                 } while (true)
