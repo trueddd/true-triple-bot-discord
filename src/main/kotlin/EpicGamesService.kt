@@ -97,10 +97,10 @@ class EpicGamesService(
         }
     }
 
-    private fun <T> Iterable<T>.isSame(other: Iterable<T>): Boolean {
+    private fun Iterable<GiveAwayGame>.isSame(other: Iterable<GiveAwayGame>): Boolean {
         if (this.count() != other.count()) {
             return false
         }
-        return this.all { item -> other.contains(item) }
+        return this.all { item -> other.any { it.id == item.id } }
     }
 }
