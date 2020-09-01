@@ -11,7 +11,9 @@ class SteamGamesService(database: Database) : BaseService(database) {
 
     suspend fun loadGames(): List<SteamGame> {
         return try {
-            val response = client.get<String>(baseUrl)
+            val response = client.get<String>(baseUrl) {
+                header("Accept-Language", "ru-RU")
+            }
             val document = Jsoup.parse(response)
             document.getElementById("TopSellersRows").children().map {
                 val url = it.attr("href")

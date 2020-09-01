@@ -131,13 +131,14 @@ class Dispatcher(private val client: Kord) : Closeable {
     }
 
     suspend fun showEgsGames(channelId: String, elements: List<GiveAwayGame>) {
+        val messageColor = Color(12, 12, 12)
         if (elements.isEmpty()) {
-            createErrorMessage(channelId, "Игры не раздают")
+            createErrorMessage(channelId, "Игры не раздают", messageColor)
             return
         }
         client.rest.channel.createMessage(channelId) {
             embed {
-                color = Color.MAGENTA
+                color = messageColor
                 author {
                     icon = "https://upload.wikimedia.org/wikipedia/commons/thumb/3/31/Epic_Games_logo.svg/1200px-Epic_Games_logo.svg.png"
                     name = "Игрульки, которые можно сейчас забрать"
