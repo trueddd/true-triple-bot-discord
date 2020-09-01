@@ -39,6 +39,8 @@ dependencies {
 
     implementation("com.gitlab.kordlib.kord:kord-core:0.6.1")
 
+    implementation("org.jsoup:jsoup:1.13.1")
+
     implementation("org.postgresql:postgresql:$postgresDriverVersion")
     implementation("org.jetbrains.exposed", "exposed-core", exposedVersion)
     implementation("org.jetbrains.exposed", "exposed-dao", exposedVersion)

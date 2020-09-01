@@ -8,6 +8,7 @@ import com.gitlab.kordlib.core.entity.Message
 import com.gitlab.kordlib.core.entity.ReactionEmoji
 import data.Movie
 import data.egs.GiveAwayGame
+import data.steam.SteamGame
 import io.ktor.util.KtorExperimentalAPI
 import java.awt.Color
 import java.io.Closeable
@@ -129,7 +130,7 @@ class Dispatcher(private val client: Kord) : Closeable {
         }
     }
 
-    suspend fun showGames(channelId: String, elements: List<GiveAwayGame>) {
+    suspend fun showEgsGames(channelId: String, elements: List<GiveAwayGame>) {
         if (elements.isEmpty()) {
             createErrorMessage(channelId, "Игры не раздают")
             return
@@ -157,6 +158,31 @@ class Dispatcher(private val client: Kord) : Closeable {
                             else -> "https://www.epicgames.com/store/en-US/product/${it.productSlug}"
                         }
                         value = "[$date]($link)"
+                        inline = true
+                    }
+                }
+            }
+        }
+    }
+
+    suspend fun showSteamGames(channelId: String, elements: List<SteamGame>) {
+        val messageColor = Color(27, 40, 56)
+        if (elements.isEmpty()) {
+            createErrorMessage(channelId, "Игры не раздают", messageColor)
+            return
+        }
+        client.rest.channel.createMessage(channelId) {
+            embed {
+                color = messageColor
+                author {
+                    icon = "https://upload.wikimedia.org/wikipedia/commons/c/c1/Steam_Logo.png"
+                    name = "Steam discounts"
+                    url = "https://store.steampowered.com/specials#p=0&tab=TopSellers"
+                }
+                elements.forEach {
+                    field {
+                        name = it.name
+                        value = "[~~${it.originalPrice}~~ ${it.currentPrice}](${it.url})"
                         inline = true
                     }
                 }
@@ -194,10 +220,10 @@ class Dispatcher(private val client: Kord) : Closeable {
         }
     }
 
-    suspend fun createErrorMessage(channelId: String, message: String) {
+    suspend fun createErrorMessage(channelId: String, message: String, messageColor: Color = Color.MAGENTA) {
         client.rest.channel.createMessage(channelId) {
             embed {
-                color = Color.MAGENTA
+                color = messageColor
                 author {
                     icon = "https://cdn.discordapp.com/emojis/722871552290455563.png?v=1"
                     name = message

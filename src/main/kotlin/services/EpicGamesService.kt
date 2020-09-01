@@ -1,9 +1,7 @@
+package services
+
 import data.egs.*
 import data.egs.GiveAwayGames.toGiveAwayGame
-import io.ktor.client.HttpClient
-import io.ktor.client.engine.okhttp.OkHttp
-import io.ktor.client.features.json.GsonSerializer
-import io.ktor.client.features.json.JsonFeature
 import io.ktor.client.request.get
 import io.ktor.util.*
 import org.jetbrains.exposed.sql.*
@@ -13,17 +11,7 @@ import java.time.LocalDateTime
 import java.time.temporal.ChronoUnit
 
 @InternalAPI
-class EpicGamesService(
-    private val database: Database
-) {
-
-    private val client by lazy {
-        HttpClient(OkHttp) {
-            install(JsonFeature) {
-                serializer = GsonSerializer()
-            }
-        }
-    }
+class EpicGamesService(database: Database) : BaseService(database) {
 
     private val baseUrl = "https://store-site-backend-static.ak.epicgames.com/freeGamesPromotions?locale=en-US"
 

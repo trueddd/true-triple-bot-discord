@@ -29,6 +29,8 @@ import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.SchemaUtils
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.slf4j.event.Level
+import services.EpicGamesService
+import services.SteamGamesService
 import utils.AppEnvironment
 import java.net.URI
 import java.time.Duration
@@ -62,6 +64,7 @@ fun Application.module() {
     }
     val guildsManager = GuildsManager(database)
     val epicGamesService = EpicGamesService(database)
+    val steamGamesService = SteamGamesService(database)
 
     GlobalScope.launch {
         val client = Kord(AppEnvironment.getBotSecret())
@@ -117,7 +120,11 @@ fun Application.module() {
                 }
                 "egs-free" -> {
                     val games = epicGamesService.load()
-                    dispatcher.showGames(message.channel.id.value, games)
+                    dispatcher.showEgsGames(message.channel.id.value, games)
+                }
+                "steam" -> {
+                    val games = steamGamesService.loadGames()
+                    dispatcher.showSteamGames(message.channel.id.value, games)
                 }
                 else -> when {
                     messageText.startsWith("roll") -> {
@@ -151,12 +158,16 @@ fun Application.module() {
                     }
                 delay(startDelay)
                 do {
+                    val observing = guildsManager.getGamesChannelsIds()
                     epicGamesService.loadDistinct()?.let { games ->
-                        val observing = guildsManager.getGamesChannelsIds()
                         observing
                             .forEach {
-                                dispatcher.showGames(it.second, games)
+                                dispatcher.showEgsGames(it.second, games)
                             }
+                    }
+                    val steamGames = steamGamesService.loadGames()
+                    observing.forEach {
+                        dispatcher.showSteamGames(it.second, steamGames)
                     }
 
                     delay(Duration.ofHours(24).toMillis())
