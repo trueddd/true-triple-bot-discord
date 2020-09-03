@@ -123,7 +123,8 @@ fun Application.module() {
                     dispatcher.showEgsGames(message.channel.id.value, games)
                 }
                 "steam" -> {
-                    val games = steamGamesService.loadGames()
+                    val region = guildsManager.getGuildRegion(message.getGuild().id.value)
+                    val games = steamGamesService.loadGames(listOf(region ?: "en"))[region] ?: return@on
                     dispatcher.showSteamGames(message.channel.id.value, games)
                 }
                 else -> when {
@@ -165,9 +166,12 @@ fun Application.module() {
                                 dispatcher.showEgsGames(it.second, games)
                             }
                     }
-                    val steamGames = steamGamesService.loadGames()
-                    observing.forEach {
-                        dispatcher.showSteamGames(it.second, steamGames)
+                    val guildsWithRegions = observing.map { it.first to (guildsManager.getGuildRegion(it.first) ?: "en") }
+                    val steamGames = steamGamesService.loadGames(guildsWithRegions.map { it.second }.distinct())
+                    observing.forEach { (guildId, channelId) ->
+                        val region = guildsWithRegions.first { it.first == guildId }.second
+                        val games = steamGames[region] ?: return@forEach
+                        dispatcher.showSteamGames(channelId, games)
                     }
 
                     delay(Duration.ofHours(24).toMillis())

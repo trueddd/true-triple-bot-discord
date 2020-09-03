@@ -183,7 +183,11 @@ class Dispatcher(private val client: Kord) : Closeable {
                 elements.forEach {
                     field {
                         name = it.name
-                        value = "[~~${it.originalPrice}~~ ${it.currentPrice}](${it.url})"
+                        value = if (it.originalPrice != null && it.currentPrice != null) {
+                            "[~~${it.originalPrice}~~ ${it.currentPrice}](${it.url})"
+                        } else {
+                            "[See in the store](${it.url})"
+                        }
                         inline = true
                     }
                 }

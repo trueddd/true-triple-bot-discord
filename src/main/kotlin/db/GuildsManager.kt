@@ -73,4 +73,25 @@ class GuildsManager(
             }
         }
     }
+
+    fun getGuildRegion(guildId: String): String? {
+        return transaction(database) {
+            Guilds.select { Guilds.id eq guildId }.singleOrNull()?.getOrNull(Guilds.region)
+        }
+    }
+
+    fun setGuildRegion(guildId: String, newRegion: String?): Boolean {
+        return transaction(database) {
+            if (Guilds.select { Guilds.id eq guildId }.singleOrNull() != null) {
+                Guilds.update({ Guilds.id eq guildId }) {
+                    it[region] = newRegion
+                } > 0
+            } else {
+                Guilds.insert {
+                    it[id] = guildId
+                    it[region] = newRegion
+                }.resultedValues?.size?.let { it > 0 } ?: false
+            }
+        }
+    }
 }

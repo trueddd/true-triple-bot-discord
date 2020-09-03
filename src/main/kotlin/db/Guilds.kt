@@ -7,6 +7,7 @@ object Guilds : Table() {
     val moviesListChannelId = varchar("movies_list_channel_id", 64).nullable()
     val watchedMoviesChannelId = varchar("watched_movies_channel_id", 64).nullable()
     val gamesChannelId = varchar("games_channel_id", 64).nullable()
+    val region = varchar("region", 8).nullable()
 
     override val tableName: String = "guilds"
 
