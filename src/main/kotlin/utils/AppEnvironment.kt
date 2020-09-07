@@ -5,8 +5,13 @@ object AppEnvironment {
     private const val PORT = "PORT"
     private const val BOT_SECRET = "BOT_SECRET"
     private const val DATABASE_URL = "DATABASE_URL"
+    private const val ENV = "ENV"
+    private const val ENV_TEST = "TEST"
+    private const val ENV_PROD = "PROD"
 
     fun getPort() = System.getenv(PORT)?.toInt() ?: 8080
     fun getBotSecret(): String = System.getenv(BOT_SECRET)
     fun getDatabaseUrl(): String = System.getenv(DATABASE_URL)
+    fun isTestEnv(): Boolean = System.getenv(ENV) == ENV_TEST
+    fun isProdEnv(): Boolean = System.getenv(ENV) == ENV_PROD
 }

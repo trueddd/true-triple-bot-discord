@@ -10,6 +10,7 @@ import data.Movie
 import data.egs.GiveAwayGame
 import data.steam.SteamGame
 import io.ktor.util.KtorExperimentalAPI
+import utils.createBotMessage
 import java.awt.Color
 import java.io.Closeable
 import java.text.SimpleDateFormat
@@ -202,16 +203,6 @@ class Dispatcher(private val client: Kord) : Closeable {
             val link = it.link
             val movie = it.pageMap.movies?.firstOrNull()
             link to movie
-        }
-    }
-
-    private suspend fun MessageChannelBehavior.createBotMessage(message: String, embedColor: Color = Color.MAGENTA) {
-        createMessage {
-            content = ""
-            embed {
-                description = message
-                color = embedColor
-            }
         }
     }
 

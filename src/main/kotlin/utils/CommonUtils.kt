@@ -1,7 +1,10 @@
 package utils
 
+import com.gitlab.kordlib.core.behavior.channel.MessageChannelBehavior
+import com.gitlab.kordlib.core.behavior.channel.createMessage
 import io.ktor.application.ApplicationCall
 import io.ktor.request.receive
+import java.awt.Color
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -20,5 +23,15 @@ fun String.egsDate(): Date {
     } catch (e: Exception) {
         e.printStackTrace()
         Date()
+    }
+}
+
+suspend fun MessageChannelBehavior.createBotMessage(message: String, embedColor: Color = Color.MAGENTA) {
+    createMessage {
+        content = ""
+        embed {
+            description = message
+            color = embedColor
+        }
     }
 }
