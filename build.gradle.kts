@@ -74,4 +74,7 @@ tasks.register<Jar>("fatJar") {
 
 tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile::class.java).all {
     kotlinOptions.jvmTarget = "1.8"
+    kotlinOptions.freeCompilerArgs += "-Xuse-experimental=io.ktor.util.KtorExperimentalAPI"
+    kotlinOptions.freeCompilerArgs += "-Xuse-experimental=io.ktor.util.InternalAPI"
+    kotlinOptions.freeCompilerArgs += "-Xuse-experimental=kotlin.ExperimentalStdlibApi"
 }

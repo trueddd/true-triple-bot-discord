@@ -1,15 +1,17 @@
 package services
 
-import Dispatcher
 import com.gitlab.kordlib.core.Kord
 import com.gitlab.kordlib.core.event.gateway.ReadyEvent
 import com.gitlab.kordlib.core.event.message.MessageCreateEvent
 import com.gitlab.kordlib.core.event.message.ReactionAddEvent
 import com.gitlab.kordlib.core.on
 import db.GuildsManager
-import io.ktor.util.*
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import services.dispatchers.BaseDispatcher
+import services.dispatchers.CommonDispatcher
+import services.dispatchers.GamesDispatcher
+import services.dispatchers.MoviesDispatcher
 import utils.createBotMessage
 import java.awt.Color
 import java.time.Duration
@@ -17,16 +19,22 @@ import java.time.LocalDateTime
 import java.time.temporal.ChronoUnit
 import java.util.*
 
-@ExperimentalStdlibApi
-@KtorExperimentalAPI
-@InternalAPI
 class MainBot(
     guildsManager: GuildsManager,
     epicGamesService: EpicGamesService,
     steamGamesService: SteamGamesService,
-    client: Kord,
-    dispatcher: Dispatcher
-) : BaseBot(guildsManager, epicGamesService, steamGamesService, client, dispatcher) {
+    client: Kord
+) : BaseBot(guildsManager, epicGamesService, steamGamesService, client) {
+
+    private val moviesDispatcher = MoviesDispatcher(guildsManager, client)
+
+    private val gamesDispatcher = GamesDispatcher(guildsManager, epicGamesService, steamGamesService, client)
+
+    private val commonDispatcher = CommonDispatcher(client)
+
+    private val dispatchers: Set<BaseDispatcher> by lazy {
+        setOf(moviesDispatcher, gamesDispatcher, commonDispatcher)
+    }
 
     override suspend fun attach() {
         client.on<ReactionAddEvent> {
@@ -49,76 +57,12 @@ class MainBot(
                     message.channel.createBotMessage("<:flag:752634825818636407><:flag:752634825818636407> ЖЫВЕ! <:flag:752634825818636407><:flag:752634825818636407>", embedColor = Color.RED)
                 }
             }
-            if (!message.content.startsWith("ttb!")) {
+            if (!message.content.startsWith(BOT_PREFIX)) {
                 return@on
             }
-            when (val messageText = message.content.removePrefix("ttb!")) {
-                "top" -> {
-                    if (guildsManager.getMoviesListChannel(guildId?.value ?: "") == null) {
-                        dispatcher.createErrorMessage(message.channelId.value, "Не установлен канал со списком фильмов (`ttb!set-movies` в канале с фильмами)")
-                    } else {
-                        dispatcher.showMoviesToRoll(message.channel)
-                    }
-                }
-                "movies-help" -> dispatcher.showMoviesHelp(message.channel)
-                "set-movies" -> {
-                    val changed = guildsManager.setMoviesListChannel(guildId?.value ?: "", message.channelId.value)
-                    dispatcher.markRequest(message, changed)
-                }
-                "unset-movies" -> {
-                    val changed = guildsManager.setMoviesListChannel(guildId?.value ?: "", null)
-                    dispatcher.markRequest(message, changed)
-                }
-                "set-watched" -> {
-                    val changed = guildsManager.setWatchedMoviesListChannel(guildId?.value ?: "", message.channelId.value)
-                    dispatcher.markRequest(message, changed)
-                }
-                "unset-watched" -> {
-                    val changed = guildsManager.setWatchedMoviesListChannel(guildId?.value ?: "", null)
-                    dispatcher.markRequest(message, changed)
-                }
-                "set-games" -> {
-                    val changed = guildsManager.setGamesChannel(guildId?.value ?: "", message.channelId.value)
-                    dispatcher.markRequest(message, changed)
-                }
-                "unset-games" -> {
-                    val changed = guildsManager.setGamesChannel(guildId?.value ?: "", null)
-                    dispatcher.markRequest(message, changed)
-                }
-                "egs-free" -> {
-                    val games = epicGamesService.load()
-                    dispatcher.showEgsGames(message.channel.id.value, games)
-                }
-                "steam" -> {
-                    val region = guildsManager.getGuildRegion(message.getGuild().id.value)
-                    val games = steamGamesService.loadGames(listOf(region ?: "en"))[region] ?: return@on
-                    dispatcher.showSteamGames(message.channel.id.value, games)
-                }
-                else -> when {
-                    messageText.startsWith("roll") -> {
-                        if (guildsManager.getMoviesListChannel(guildId?.value ?: "") == null)
-                            return@on
-                        dispatcher.rollMovies(message.channel, messageText.contains("-s"))
-                    }
-                    messageText.startsWith("search") -> {
-                        dispatcher.searchForMovie(message.channel, messageText.removePrefix("search").trim())
-                    }
-                    messageText.startsWith("pick") -> {
-                        val options = messageText.removePrefix("pick").trim()
-                            .split("\n")
-                            .mapNotNull { if (it.isEmpty()) null else it }
-                        if (options.isEmpty()) {
-                            dispatcher.markRequest(message, false)
-                            return@on
-                        } else {
-                            val chosen = options.randomOrNull() ?: run {
-                                dispatcher.markRequest(message, false)
-                                return@on
-                            }
-                            message.channel.createBotMessage(chosen, embedColor = Color.ORANGE)
-                        }
-                    }
-                }
+            val messageText = message.content.removePrefix(BOT_PREFIX)
+            dispatchers.firstOrNull { messageText.startsWith(it.dispatcherPrefix) }?.let {
+                it.onMessageCreate(this, messageText.removePrefix("${it.dispatcherPrefix}${BaseDispatcher.PREFIX_DELIMITER}"))
             }
         }
 
@@ -145,7 +89,7 @@ class MainBot(
                     epicGamesService.loadDistinct()?.let { games ->
                         observing
                             .forEach {
-                                dispatcher.showEgsGames(it.second, games)
+                                gamesDispatcher.showEgsGames(it.second, games)
                             }
                     }
                     val guildsWithRegions = observing.map { it.first to (guildsManager.getGuildRegion(it.first) ?: "en") }
@@ -153,7 +97,7 @@ class MainBot(
                     observing.forEach { (guildId, channelId) ->
                         val region = guildsWithRegions.first { it.first == guildId }.second
                         val games = steamGames[region] ?: return@forEach
-                        dispatcher.showSteamGames(channelId, games)
+                        gamesDispatcher.showSteamGames(channelId, games)
                     }
 
                     delay(Duration.ofHours(24).toMillis())

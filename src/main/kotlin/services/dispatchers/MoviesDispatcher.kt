@@ -1,0 +1,222 @@
+package services.dispatchers
+
+import GoogleService
+import com.gitlab.kordlib.common.entity.DiscordMessage
+import com.gitlab.kordlib.core.Kord
+import com.gitlab.kordlib.core.behavior.channel.MessageChannelBehavior
+import com.gitlab.kordlib.core.behavior.channel.createEmbed
+import com.gitlab.kordlib.core.event.message.MessageCreateEvent
+import data.Movie
+import db.GuildsManager
+import java.awt.Color
+import java.text.SimpleDateFormat
+import java.util.*
+
+class MoviesDispatcher(
+    private val guildsManager: GuildsManager,
+    client: Kord
+) : BaseDispatcher(client) {
+
+    private val googleService by lazy {
+        GoogleService()
+    }
+
+    override val dispatcherPrefix: String
+        get() = "movies"
+
+    private suspend fun getMovieList(moviesChannelId: String): Map<Int, List<DiscordMessage>> {
+        val messages = client.rest.channel.getMessages(moviesChannelId, limit = 100)
+        return messages
+            .groupBy { it.reactions?.firstOrNull { reaction -> reaction.emoji.name == "\uD83D\uDC4D" }?.count ?: 0 }
+    }
+
+    private suspend fun showMoviesToRoll(channelId: String, moviesChannelId: String) {
+        getMovieList(moviesChannelId)
+            .maxByOrNull { it.key }
+            ?.let { entry ->
+                val newText = entry.value.mapIndexed { index, it ->
+                    "${index + 1}. ${it.content} от ${getMention(it.author)}"
+                }.joinToString("\n")
+                val votesCount = entry.value.first().reactions?.firstOrNull { it.emoji.name == "\uD83D\uDC4D" }?.count ?: 0
+                postMessage(channelId, "Фильмы с наибольшим количесвом лайков ($votesCount лайка у каждого):\n$newText")
+            } ?: postErrorMessage(channelId, "Нечего смотреть")
+    }
+
+    private suspend fun rollMovies(channel: MessageChannelBehavior, moviesChannelId: String, withSearch: Boolean = false) {
+        getMovieList(moviesChannelId)
+            .maxByOrNull { it.key }
+            ?.value?.randomOrNull()
+            ?.let {
+                postMessage(channel, "**${it.content}** от ${getMention(it.author)} :trophy:")
+                if (withSearch) {
+                    searchForMovie(channel, it.content)
+                }
+            } ?: postErrorMessage(channel, "Нечего смотреть")
+    }
+
+    private suspend fun getMovie(name: String): Pair<String, Movie?>? {
+        return googleService.load(name)?.items?.firstOrNull {
+            it.pageMap.movies?.firstOrNull() != null
+        }?.let {
+            val link = it.link
+            val movie = it.pageMap.movies?.firstOrNull()
+            link to movie
+        }
+    }
+
+    private suspend fun searchForMovie(channel: MessageChannelBehavior, movieName: String) {
+        if (movieName.isBlank()) {
+            postErrorMessage(channel, "Не могу искать, если ты не скажешь, что искать")
+            return
+        }
+        val (movieLink, movie) = getMovie(movieName) ?: run {
+            postErrorMessage(channel, "Не нашёл")
+            return
+        }
+        channel.createEmbed {
+            color = Color.MAGENTA
+            title = movie?.name ?: movieName
+            author {
+                icon = "https://yt3.ggpht.com/a/AATXAJz7FyhOdugVDwiazqdVf0P-xD1GOlkj-qdwD7cPtg=s900-c-k-c0xffffffff-no-rj-mo"
+                name = "Смотреть на Кинопоиске"
+                url = movieLink
+            }
+            movie?.let {
+                image = movie.image
+                field {
+                    name = "Актёры"
+                    value = movie.actors
+                    inline = true
+                }
+                field {
+                    name = "Дата выхода"
+                    value = movie.dateCreated.convertDate()
+                    inline = true
+                }
+                field {
+                    name = "Режиссёр"
+                    value = movie.director
+                    inline = true
+                }
+                field {
+                    name = "Жанр"
+                    value = movie.genre
+                    inline = true
+                }
+                footer {
+                    text = movie.description
+                }
+            }
+        }
+    }
+
+    override suspend fun onMessageCreate(event: MessageCreateEvent, trimmedMessage: String) {
+        val guildId = event.message.getGuild().id.value
+        val channelId = event.message.channelId.value
+        when (trimmedMessage) {
+            "top" -> {
+                val moviesChannelId = guildsManager.getMoviesListChannel(guildId)
+                if (moviesChannelId == null) {
+                    postErrorMessage(channelId, "Не установлен канал со списком фильмов (`ttb!set-movies` в канале с фильмами)")
+                } else {
+                    showMoviesToRoll(channelId, moviesChannelId)
+                }
+            }
+            "help" -> {
+                showHelp(event.message.channel, guildsManager.getMoviesListChannel(guildId))
+            }
+            "set" -> {
+                val changed = guildsManager.setMoviesListChannel(guildId, channelId)
+                respondWithReaction(event.message, changed)
+            }
+            "unset" -> {
+                val changed = guildsManager.setMoviesListChannel(guildId, null)
+                respondWithReaction(event.message, changed)
+            }
+            "watched-set" -> {
+                val changed = guildsManager.setWatchedMoviesListChannel(guildId, channelId)
+                respondWithReaction(event.message, changed)
+            }
+            "watched-unset" -> {
+                val changed = guildsManager.setWatchedMoviesListChannel(guildId, null)
+                respondWithReaction(event.message, changed)
+            }
+            else -> when {
+                trimmedMessage.startsWith("roll") -> {
+                    val moviesListChannelId = guildsManager.getMoviesListChannel(guildId) ?: return
+                    rollMovies(event.message.channel, moviesListChannelId, trimmedMessage.contains("-s"))
+                }
+                trimmedMessage.startsWith("search") -> {
+                    searchForMovie(event.message.channel, trimmedMessage.removePrefix("search").trim())
+                }
+            }
+        }
+    }
+
+    suspend fun showHelp(channel: MessageChannelBehavior, moviesChannelId: String?) {
+        val rulesTextStart = if (moviesChannelId != null) {
+            "В выборку попадают первые 100 фильмов из канала ${getChannelMention(moviesChannelId)}."
+        } else {
+            "В выборку попадают первые 100 фильмов из неустановленного канала (${getCommand("set")}, чтобы установить)."
+        }
+
+        channel.createEmbed {
+            color = Color(90, 141, 62)
+            field {
+                name = "Фильмы"
+                value = "Следующие команды отвечают за выбор, хранение и поиск фильмов ботом. Боту можно указать два канала: канал для предложенных фильмов и канал для просмотренных фильмов (подробнее в описаниях команд). Пометить фильм как просмотренный можно, выставив ему специальную реакцию (✅)."
+            }
+            field {
+                name = "Правила выбора фильмов"
+                value = "$rulesTextStart Фильм выбирается по наибольшему количеству лайков ( :thumbsup: ) в реакциях."
+            }
+            field {
+                name = getCommand("set")
+                value = "Устанавливает канал, в который была отправлена команда, как канал откуда бот будет брать список фильмов."
+                inline = true
+            }
+            field {
+                name = getCommand("unset")
+                value = "Отменяет предыдущую команду."
+                inline = true
+            }
+            field {
+                name = getCommand("watched-set")
+                value = "Устанавливает канал, в который была отпрвлена команда, как канал куда бот будет сохранять список просмотренных каналов."
+                inline = true
+            }
+            field {
+                name = getCommand("watched-unset")
+                value = "Отменяет предыдущую команду."
+                inline = true
+            }
+            field {
+                name = getCommand("top")
+                value = "Показывает список фильмов с максимальным количеством лайков."
+                inline = true
+            }
+            field {
+                name = getCommand("search")
+                value = "Ищет фильм на Кинопоиске. Пример использования: `${getCommand("search", false)} Геи-ниггеры из далёкого космоса`."
+                inline = true
+            }
+            field {
+                name = "`${getCommand("roll")}`"
+                value = "Выбирает случайный фильм из выборки, которую можно посмотреть по комманде ${getCommand("top")}. Если ввести параметр `-s`, бот найдёт выбранный фильм на Кинопоиске."
+                inline = true
+            }
+        }
+    }
+
+    private fun String.convertDate(): String {
+        return try {
+            val inputFormatter = SimpleDateFormat("yyyy-MM-dd")
+            val date = inputFormatter.parse(this)
+            val outputFormatter = SimpleDateFormat("d LLLL yyyy", Locale.forLanguageTag("ru"))
+            outputFormatter.format(date)
+        } catch (e: Exception) {
+            e.printStackTrace()
+            this
+        }
+    }
+}

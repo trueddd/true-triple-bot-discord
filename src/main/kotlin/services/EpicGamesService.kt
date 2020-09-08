@@ -10,7 +10,6 @@ import utils.egsDate
 import java.time.LocalDateTime
 import java.time.temporal.ChronoUnit
 
-@InternalAPI
 class EpicGamesService(database: Database) : BaseService(database) {
 
     private val baseUrl = "https://store-site-backend-static.ak.epicgames.com/freeGamesPromotions?locale=en-US"

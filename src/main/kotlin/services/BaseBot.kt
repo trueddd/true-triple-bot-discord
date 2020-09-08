@@ -1,18 +1,13 @@
 package services
 
-import Dispatcher
 import com.gitlab.kordlib.core.Kord
 import db.GuildsManager
-import io.ktor.util.*
 
-@KtorExperimentalAPI
-@InternalAPI
 abstract class BaseBot(
     protected val guildsManager: GuildsManager,
     protected val epicGamesService: EpicGamesService,
     protected val steamGamesService: SteamGamesService,
-    protected val client: Kord,
-    protected val dispatcher: Dispatcher
+    protected val client: Kord
 ) {
 
     abstract suspend fun attach()

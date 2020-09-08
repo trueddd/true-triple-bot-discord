@@ -14,8 +14,6 @@ import io.ktor.routing.get
 import io.ktor.routing.routing
 import io.ktor.server.engine.embeddedServer
 import io.ktor.server.netty.Netty
-import io.ktor.util.InternalAPI
-import io.ktor.util.KtorExperimentalAPI
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import org.slf4j.event.Level
@@ -26,16 +24,10 @@ import services.TestBot
 import utils.AppEnvironment
 import utils.provideDatabase
 
-@ExperimentalStdlibApi
-@InternalAPI
-@KtorExperimentalAPI
 fun main(args: Array<String>) {
     embeddedServer(Netty, port = AppEnvironment.getPort(), module = Application::module).start(wait = true)
 }
 
-@ExperimentalStdlibApi
-@InternalAPI
-@KtorExperimentalAPI
 fun Application.module() {
 
     val database = provideDatabase()
@@ -45,14 +37,13 @@ fun Application.module() {
 
     GlobalScope.launch {
         val client = Kord(AppEnvironment.getBotSecret())
-        val dispatcher = Dispatcher(client)
 
         if (AppEnvironment.isProdEnv()) {
-            val bot = MainBot(guildsManager, epicGamesService, steamGamesService, client, dispatcher)
+            val bot = MainBot(guildsManager, epicGamesService, steamGamesService, client)
             bot.attach()
         }
         if (AppEnvironment.isTestEnv()) {
-            val bot = TestBot(guildsManager, epicGamesService, steamGamesService, client, dispatcher)
+            val bot = TestBot(guildsManager, epicGamesService, steamGamesService, client)
             bot.attach()
         }
 

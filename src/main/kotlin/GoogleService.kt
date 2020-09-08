@@ -5,11 +5,9 @@ import io.ktor.client.features.json.GsonSerializer
 import io.ktor.client.features.json.JsonFeature
 import io.ktor.client.request.get
 import io.ktor.client.request.parameter
-import io.ktor.util.KtorExperimentalAPI
 import java.io.Closeable
 import java.lang.Exception
 
-@KtorExperimentalAPI
 class GoogleService : Closeable {
 
     private val client by lazy {
