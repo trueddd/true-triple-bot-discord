@@ -8,16 +8,13 @@ import com.gitlab.kordlib.core.on
 import db.GuildsManager
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import services.dispatchers.BaseDispatcher
-import services.dispatchers.CommonDispatcher
-import services.dispatchers.GamesDispatcher
-import services.dispatchers.MoviesDispatcher
+import services.dispatchers.*
 import utils.createBotMessage
 import java.awt.Color
 import java.time.Duration
 import java.time.LocalDateTime
 import java.time.temporal.ChronoUnit
-import java.util.*
+import java.util.regex.Pattern
 
 class MainBot(
     guildsManager: GuildsManager,
@@ -32,37 +29,36 @@ class MainBot(
 
     private val commonDispatcher = CommonDispatcher(client)
 
-    private val dispatchers: Set<BaseDispatcher> by lazy {
+    private val messageListeners: Set<MessageCreateListener> by lazy {
         setOf(moviesDispatcher, gamesDispatcher, commonDispatcher)
     }
 
+    private val reactionListeners: Set<ReactionAddListener> by lazy {
+        setOf(moviesDispatcher)
+    }
+
+    private val botPrefixPattern = Pattern.compile("^$BOT_PREFIX.*").toRegex()
+
     override suspend fun attach() {
+        val belPattern = Pattern.compile("(жыве(\\s+)беларусь)", Pattern.CASE_INSENSITIVE).toRegex()
         client.on<ReactionAddEvent> {
-            if (guildsManager.getMoviesListChannel(guildId?.value ?: "") == channel.id.value && emoji.name == "✅") {
-                println("check mark detected")
-                val watchedChannelId = guildsManager.getWatchedMoviesChannelId(guildId?.value ?: "") ?: return@on
-                val movieMessage = message.asMessage()
-                message.delete()
-                client.rest.channel.createMessage(watchedChannelId) {
-                    content = movieMessage.content.replace("✅", "").trim()
-                }
+            reactionListeners.forEach {
+                it.onReactionAdd(this)
             }
         }
         client.on<MessageCreateEvent> {
             launch {
-                if (message.content.trim()
-                        .toLowerCase(Locale("ru"))
-                        .startsWith("жыве беларусь")
+                if (message.content.matches(belPattern)
                     && guildsManager.getGuildRegion(message.getGuild().id.value) == "by") {
-                    message.channel.createBotMessage("<:flag:752634825818636407><:flag:752634825818636407> ЖЫВЕ! <:flag:752634825818636407><:flag:752634825818636407>", embedColor = Color.RED)
+                    message.channel.createBotMessage(BEL_RESPONSE, embedColor = Color.RED)
                 }
             }
-            if (!message.content.startsWith(BOT_PREFIX)) {
+            if (!message.content.matches(botPrefixPattern)) {
                 return@on
             }
             val messageText = message.content.removePrefix(BOT_PREFIX)
-            dispatchers.firstOrNull { messageText.startsWith(it.dispatcherPrefix) }?.let {
-                it.onMessageCreate(this, messageText.removePrefix("${it.dispatcherPrefix}${BaseDispatcher.PREFIX_DELIMITER}"))
+            messageListeners.firstOrNull { messageText.startsWith(it.getPrefix()) }?.let {
+                it.onMessageCreate(this, messageText.removePrefix("${it.getPrefix()}${BaseDispatcher.PREFIX_DELIMITER}"))
             }
         }
 
@@ -104,5 +100,10 @@ class MainBot(
                 } while (true)
             }
         }
+    }
+
+    companion object {
+        private const val FLAG_EMOJI = "<:flag:752634825818636407>"
+        const val BEL_RESPONSE = "$FLAG_EMOJI$FLAG_EMOJI ЖЫВЕ! $FLAG_EMOJI$FLAG_EMOJI"
     }
 }

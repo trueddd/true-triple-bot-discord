@@ -6,8 +6,11 @@ import com.gitlab.kordlib.core.Kord
 import com.gitlab.kordlib.core.behavior.channel.MessageChannelBehavior
 import com.gitlab.kordlib.core.behavior.channel.createEmbed
 import com.gitlab.kordlib.core.event.message.MessageCreateEvent
+import com.gitlab.kordlib.core.event.message.ReactionAddEvent
 import data.Movie
 import db.GuildsManager
+import utils.Commands
+import utils.commandRegex
 import java.awt.Color
 import java.text.SimpleDateFormat
 import java.util.*
@@ -15,7 +18,7 @@ import java.util.*
 class MoviesDispatcher(
     private val guildsManager: GuildsManager,
     client: Kord
-) : BaseDispatcher(client) {
+) : BaseDispatcher(client), MessageCreateListener, ReactionAddListener {
 
     private val googleService by lazy {
         GoogleService()
@@ -23,6 +26,10 @@ class MoviesDispatcher(
 
     override val dispatcherPrefix: String
         get() = "movies"
+
+    override fun getPrefix(): String {
+        return dispatcherPrefix
+    }
 
     private suspend fun getMovieList(moviesChannelId: String): Map<Int, List<DiscordMessage>> {
         val messages = client.rest.channel.getMessages(moviesChannelId, limit = 100)
@@ -110,11 +117,21 @@ class MoviesDispatcher(
         }
     }
 
+    private val top = Commands.Movies.TOP.commandRegex()
+    private val help = Commands.Movies.HELP.commandRegex()
+    private val set = Commands.Movies.SET.commandRegex()
+    private val unset = Commands.Movies.UNSET.commandRegex()
+    private val watchedSet = Commands.Movies.WATCHED_SET.commandRegex()
+    private val watchedUnset = Commands.Movies.WATCHED_UNSET.commandRegex()
+    private val roll = Commands.Movies.ROLL.commandRegex(singleWordCommand = false)
+    private val search = Commands.Movies.SEARCH.commandRegex(singleWordCommand = false)
+
     override suspend fun onMessageCreate(event: MessageCreateEvent, trimmedMessage: String) {
+        println("onMessageCreate $this")
         val guildId = event.message.getGuild().id.value
         val channelId = event.message.channelId.value
-        when (trimmedMessage) {
-            "top" -> {
+        when {
+            trimmedMessage.matches(top) -> {
                 val moviesChannelId = guildsManager.getMoviesListChannel(guildId)
                 if (moviesChannelId == null) {
                     postErrorMessage(channelId, "Не установлен канал со списком фильмов (`ttb!set-movies` в канале с фильмами)")
@@ -122,33 +139,44 @@ class MoviesDispatcher(
                     showMoviesToRoll(channelId, moviesChannelId)
                 }
             }
-            "help" -> {
+            trimmedMessage.matches(help) -> {
                 showHelp(event.message.channel, guildsManager.getMoviesListChannel(guildId))
             }
-            "set" -> {
+            trimmedMessage.matches(set) -> {
                 val changed = guildsManager.setMoviesListChannel(guildId, channelId)
                 respondWithReaction(event.message, changed)
             }
-            "unset" -> {
+            trimmedMessage.matches(unset) -> {
                 val changed = guildsManager.setMoviesListChannel(guildId, null)
                 respondWithReaction(event.message, changed)
             }
-            "watched-set" -> {
+            trimmedMessage.matches(watchedSet) -> {
                 val changed = guildsManager.setWatchedMoviesListChannel(guildId, channelId)
                 respondWithReaction(event.message, changed)
             }
-            "watched-unset" -> {
+            trimmedMessage.matches(watchedUnset) -> {
                 val changed = guildsManager.setWatchedMoviesListChannel(guildId, null)
                 respondWithReaction(event.message, changed)
             }
-            else -> when {
-                trimmedMessage.startsWith("roll") -> {
-                    val moviesListChannelId = guildsManager.getMoviesListChannel(guildId) ?: return
-                    rollMovies(event.message.channel, moviesListChannelId, trimmedMessage.contains("-s"))
-                }
-                trimmedMessage.startsWith("search") -> {
-                    searchForMovie(event.message.channel, trimmedMessage.removePrefix("search").trim())
-                }
+            trimmedMessage.matches(roll) -> {
+                val moviesListChannelId = guildsManager.getMoviesListChannel(guildId) ?: return
+                rollMovies(event.message.channel, moviesListChannelId, trimmedMessage.contains("-s"))
+            }
+            trimmedMessage.matches(search) -> {
+                searchForMovie(event.message.channel, trimmedMessage.removePrefix("search").trim())
+            }
+        }
+    }
+
+    override suspend fun onReactionAdd(event: ReactionAddEvent) {
+        val guildId = event.guildId?.value ?: ""
+        val channelId = event.message.channelId.value
+        if (event.emoji.name == "✅" && guildsManager.getMoviesListChannel(guildId) == channelId) {
+            val watchedChannelId = guildsManager.getWatchedMoviesChannelId(guildId) ?: return
+            val movieMessage = event.message.asMessage()
+            event.message.delete()
+            client.rest.channel.createMessage(watchedChannelId) {
+                content = movieMessage.content
             }
         }
     }

@@ -4,10 +4,8 @@ import com.gitlab.kordlib.common.entity.DiscordChannel
 import com.gitlab.kordlib.common.entity.DiscordUser
 import com.gitlab.kordlib.core.Kord
 import com.gitlab.kordlib.core.behavior.channel.MessageChannelBehavior
-import com.gitlab.kordlib.core.behavior.channel.createMessage
 import com.gitlab.kordlib.core.entity.Message
 import com.gitlab.kordlib.core.entity.ReactionEmoji
-import com.gitlab.kordlib.core.event.message.MessageCreateEvent
 import services.BaseBot
 import java.awt.Color
 
@@ -22,8 +20,6 @@ abstract class BaseDispatcher(protected val client: Kord) {
     }
 
     abstract val dispatcherPrefix: String
-
-    abstract suspend fun onMessageCreate(event: MessageCreateEvent, trimmedMessage: String)
 
     suspend fun postMessage(channelId: String, message: String, messageColor: Color = Color.MAGENTA) {
         client.rest.channel.createMessage(channelId) {

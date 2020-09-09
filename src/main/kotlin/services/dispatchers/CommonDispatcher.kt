@@ -7,10 +7,15 @@ import com.gitlab.kordlib.core.entity.Message
 import com.gitlab.kordlib.core.event.message.MessageCreateEvent
 import java.awt.Color
 
-class CommonDispatcher(client: Kord) : BaseDispatcher(client) {
+// TODO: migrate to regexp
+class CommonDispatcher(client: Kord) : BaseDispatcher(client), MessageCreateListener {
 
     override val dispatcherPrefix: String
         get() = ""
+
+    override fun getPrefix(): String {
+        return dispatcherPrefix
+    }
 
     override suspend fun onMessageCreate(event: MessageCreateEvent, trimmedMessage: String) {
         when {

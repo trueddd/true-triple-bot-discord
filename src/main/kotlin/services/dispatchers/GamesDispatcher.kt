@@ -14,15 +14,20 @@ import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.util.*
 
+// TODO: migrate to regexp
 class GamesDispatcher(
     private val guildsManager: GuildsManager,
     private val epicGamesService: EpicGamesService,
     private val steamGamesService: SteamGamesService,
     client: Kord
-) : BaseDispatcher(client) {
+) : BaseDispatcher(client), MessageCreateListener {
 
     override val dispatcherPrefix: String
         get() = "games"
+
+    override fun getPrefix(): String {
+        return dispatcherPrefix
+    }
 
     override suspend fun onMessageCreate(event: MessageCreateEvent, trimmedMessage: String) {
         val guildId = event.message.getGuild().id.value
