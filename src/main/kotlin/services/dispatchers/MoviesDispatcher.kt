@@ -88,30 +88,38 @@ class MoviesDispatcher(
                 name = "Смотреть на Кинопоиске"
                 url = movieLink
             }
-            movie?.let {
-                image = movie.image
+            movie?.image?.let { image = it }
+            movie?.actors?.let {
                 field {
                     name = "Актёры"
-                    value = movie.actors
+                    value = it
                     inline = true
                 }
+            }
+            movie?.dateCreated?.convertDate()?.let {
                 field {
                     name = "Дата выхода"
-                    value = movie.dateCreated.convertDate()
+                    value = it
                     inline = true
                 }
+            }
+            movie?.director?.let {
                 field {
                     name = "Режиссёр"
-                    value = movie.director
+                    value = it
                     inline = true
                 }
+            }
+            movie?.genre?.let {
                 field {
                     name = "Жанр"
-                    value = movie.genre
+                    value = it
                     inline = true
                 }
+            }
+            movie?.description?.let {
                 footer {
-                    text = movie.description
+                    text = it
                 }
             }
         }
