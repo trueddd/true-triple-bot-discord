@@ -38,5 +38,5 @@ suspend fun MessageChannelBehavior.createBotMessage(message: String, embedColor:
 }
 
 fun String.commandRegex(singleWordCommand: Boolean = true): Regex {
-    return Pattern.compile("^$this${if (singleWordCommand) "$" else ""}").toRegex()
+    return Pattern.compile("^$this${if (singleWordCommand) "$" else ".*"}").toRegex()
 }

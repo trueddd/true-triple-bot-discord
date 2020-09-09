@@ -38,14 +38,14 @@ fun Application.module() {
     GlobalScope.launch {
         val client = Kord(AppEnvironment.getBotSecret())
 
-        if (AppEnvironment.isProdEnv()) {
+//        if (AppEnvironment.isProdEnv()) {
             val bot = MainBot(guildsManager, epicGamesService, steamGamesService, client)
             bot.attach()
-        }
-        if (AppEnvironment.isTestEnv()) {
-            val bot = TestBot(guildsManager, epicGamesService, steamGamesService, client)
-            bot.attach()
-        }
+//        }
+//        if (AppEnvironment.isTestEnv()) {
+//            val bot = TestBot(guildsManager, epicGamesService, steamGamesService, client)
+//            bot.attach()
+//        }
 
         client.login()
     }

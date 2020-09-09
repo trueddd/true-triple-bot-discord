@@ -127,14 +127,13 @@ class MoviesDispatcher(
     private val search = Commands.Movies.SEARCH.commandRegex(singleWordCommand = false)
 
     override suspend fun onMessageCreate(event: MessageCreateEvent, trimmedMessage: String) {
-        println("onMessageCreate $this")
         val guildId = event.message.getGuild().id.value
         val channelId = event.message.channelId.value
         when {
             trimmedMessage.matches(top) -> {
                 val moviesChannelId = guildsManager.getMoviesListChannel(guildId)
                 if (moviesChannelId == null) {
-                    postErrorMessage(channelId, "Не установлен канал со списком фильмов (`ttb!set-movies` в канале с фильмами)")
+                    postErrorMessage(channelId, "Не установлен канал со списком фильмов (${getCommand(Commands.Movies.SET)} в канале с фильмами)")
                 } else {
                     showMoviesToRoll(channelId, moviesChannelId)
                 }
