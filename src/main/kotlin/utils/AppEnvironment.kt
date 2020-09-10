@@ -8,10 +8,14 @@ object AppEnvironment {
     private const val ENV = "ENV"
     private const val ENV_TEST = "TEST"
     private const val ENV_PROD = "PROD"
+    private const val GOOGLE_KEY = "GOOGLE_KEY"
+    private const val SEARCH_ENGINE = "SEARCH_ENGINE"
 
     fun getPort() = System.getenv(PORT)?.toInt() ?: 8080
     fun getBotSecret(): String = System.getenv(BOT_SECRET)
     fun getDatabaseUrl(): String = System.getenv(DATABASE_URL)
+    fun getGoogleKey(): String = System.getenv(GOOGLE_KEY)
+    fun getSearchEngine(): String = System.getenv(SEARCH_ENGINE)
     fun isTestEnv(): Boolean = System.getenv(ENV) == ENV_TEST
     fun isProdEnv(): Boolean = System.getenv(ENV) == ENV_PROD
 }

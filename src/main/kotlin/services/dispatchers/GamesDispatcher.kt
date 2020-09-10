@@ -9,12 +9,13 @@ import data.steam.SteamGame
 import db.GuildsManager
 import services.EpicGamesService
 import services.SteamGamesService
+import utils.Commands
+import utils.commandRegex
 import java.awt.Color
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.util.*
 
-// TODO: migrate to regexp
 class GamesDispatcher(
     private val guildsManager: GuildsManager,
     private val epicGamesService: EpicGamesService,
@@ -29,26 +30,32 @@ class GamesDispatcher(
         return dispatcherPrefix
     }
 
+    private val help = Commands.Games.HELP.commandRegex()
+    private val set = Commands.Games.SET.commandRegex()
+    private val unset = Commands.Games.UNSET.commandRegex()
+    private val egs = Commands.Games.EGS.commandRegex()
+    private val steam = Commands.Games.STEAM.commandRegex()
+
     override suspend fun onMessageCreate(event: MessageCreateEvent, trimmedMessage: String) {
         val guildId = event.message.getGuild().id.value
         val channelId = event.message.channelId.value
-        when (trimmedMessage) {
-            "help" -> {
+        when {
+            help.matches(trimmedMessage) -> {
                 showHelp(event.message.channel)
             }
-            "set" -> {
+            set.matches(trimmedMessage) -> {
                 val changed = guildsManager.setGamesChannel(guildId, channelId)
                 respondWithReaction(event.message, changed)
             }
-            "unset" -> {
+            unset.matches(trimmedMessage) -> {
                 val changed = guildsManager.setGamesChannel(guildId, null)
                 respondWithReaction(event.message, changed)
             }
-            "egs" -> {
+            egs.matches(trimmedMessage) -> {
                 val games = epicGamesService.load()
                 showEgsGames(channelId, games)
             }
-            "steam" -> {
+            steam.matches(trimmedMessage) -> {
                 val region = guildsManager.getGuildRegion(guildId)
                 val games = steamGamesService.loadGames(listOf(region ?: "en"))[region] ?: return
                 showSteamGames(channelId, games)
@@ -64,22 +71,22 @@ class GamesDispatcher(
                 value = "Следующие команды отвечают за уведомления о скидках, распродажах и раздачах игр."
             }
             field {
-                name = getCommand("set")
+                name = getCommand(Commands.Games.SET)
                 value = "Устанавливает канал, в который была отправлена команда, как канал куда бот будет присылать уведомления."
                 inline = true
             }
             field {
-                name = getCommand("unset")
+                name = getCommand(Commands.Games.UNSET)
                 value = "Отменяет предыдущую команду."
                 inline = true
             }
             field {
-                name = getCommand("steam")
+                name = getCommand(Commands.Games.STEAM)
                 value = "Показывает список текущих скидок в Steam."
                 inline = true
             }
             field {
-                name = getCommand("egs")
+                name = getCommand(Commands.Games.EGS)
                 value = "Показывает список текущих и будущих раздач в Epic Games Store."
                 inline = true
             }
@@ -100,19 +107,19 @@ class GamesDispatcher(
                     name = "Epic Games Store"
                     url = "https://www.epicgames.com/store/en-US/free-games"
                 }
-                elements.forEach {
+                elements.forEach { game ->
                     field {
                         val now = LocalDateTime.now()
-                        name = it.title
+                        name = game.title
                         val date = when {
-                            it.promotion == null -> "Free"
-                            now.isBefore(it.promotion.start) -> "с ${it.promotion.start.format()}"
-                            now.isAfter(it.promotion.start) && now.isBefore(it.promotion.end) -> "до ${it.promotion.end.format()}"
+                            game.promotion == null -> "Free"
+                            now.isBefore(game.promotion.start) -> game.promotion.start.format()?.let { "с $it" } ?: "N/A"
+                            now.isAfter(game.promotion.start) && now.isBefore(game.promotion.end) -> game.promotion.end.format()?.let { "до $it" } ?: "N/A"
                             else -> "Free"
                         }
                         val link = when {
-                            it.productSlug.isNullOrEmpty() -> "https://www.epicgames.com/store/en-US/free-games"
-                            else -> "https://www.epicgames.com/store/en-US/product/${it.productSlug}"
+                            game.productSlug.isNullOrEmpty() -> "https://www.epicgames.com/store/en-US/free-games"
+                            else -> "https://www.epicgames.com/store/en-US/product/${game.productSlug}"
                         }
                         value = "[$date]($link)"
                         inline = true
@@ -151,13 +158,13 @@ class GamesDispatcher(
         }
     }
 
-    private fun LocalDateTime.format(pattern: String = "MMM d"): String {
+    private fun LocalDateTime.format(pattern: String = "d MMMM", locale: Locale = Locale("ru")): String? {
         return try {
-            val outFormatter = DateTimeFormatter.ofPattern(pattern, Locale.UK)
+            val outFormatter = DateTimeFormatter.ofPattern(pattern, locale)
             outFormatter.format(this)
         } catch (e: Exception) {
             e.printStackTrace()
-            "TBA"
+            null
         }
     }
 }

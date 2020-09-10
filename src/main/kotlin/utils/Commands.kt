@@ -11,4 +11,16 @@ object Commands {
         const val ROLL = "roll"
         const val SEARCH = "search"
     }
+    object Games {
+        const val HELP = "help"
+        const val SET = "set"
+        const val UNSET = "unset"
+        const val EGS = "egs"
+        const val STEAM = "steam"
+    }
+    object Common {
+        const val HELP = "help"
+        const val PICK = "pick"
+        const val LOCALE = "locale"
+    }
 }

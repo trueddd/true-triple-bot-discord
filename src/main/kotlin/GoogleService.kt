@@ -5,6 +5,7 @@ import io.ktor.client.features.json.GsonSerializer
 import io.ktor.client.features.json.JsonFeature
 import io.ktor.client.request.get
 import io.ktor.client.request.parameter
+import utils.AppEnvironment
 import java.io.Closeable
 import java.lang.Exception
 
@@ -18,9 +19,9 @@ class GoogleService : Closeable {
         }
     }
 
-    private val key = "AIzaSyCqqabmzaH4OVYpDtoZ00CjkU6T0wH-2KU"
+    private val key = AppEnvironment.getGoogleKey()
 
-    private val searchEngineId = "012140673412975639412:3qxfnzouyog"
+    private val searchEngineId = AppEnvironment.getSearchEngine()
 
     private val baseUrl = "https://www.googleapis.com/customsearch/v1"
 

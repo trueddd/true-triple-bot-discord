@@ -5,10 +5,15 @@ import com.gitlab.kordlib.core.behavior.channel.MessageChannelBehavior
 import com.gitlab.kordlib.core.behavior.channel.createEmbed
 import com.gitlab.kordlib.core.entity.Message
 import com.gitlab.kordlib.core.event.message.MessageCreateEvent
+import db.GuildsManager
+import utils.Commands
+import utils.commandRegex
 import java.awt.Color
 
-// TODO: migrate to regexp
-class CommonDispatcher(client: Kord) : BaseDispatcher(client), MessageCreateListener {
+class CommonDispatcher(
+    private val guildsManager: GuildsManager,
+    client: Kord
+) : BaseDispatcher(client), MessageCreateListener {
 
     override val dispatcherPrefix: String
         get() = ""
@@ -17,13 +22,20 @@ class CommonDispatcher(client: Kord) : BaseDispatcher(client), MessageCreateList
         return dispatcherPrefix
     }
 
+    private val help = Commands.Common.HELP.commandRegex()
+    private val pick = Commands.Common.PICK.commandRegex(singleWordCommand = false)
+    private val locale = Commands.Common.LOCALE.commandRegex(singleWordCommand = false)
+
     override suspend fun onMessageCreate(event: MessageCreateEvent, trimmedMessage: String) {
         when {
-            trimmedMessage == "help" -> {
+            help.matches(trimmedMessage) -> {
                 showHelp(event.message.channel)
             }
-            trimmedMessage.startsWith("pick") -> {
-                pickRandom(trimmedMessage.removePrefix("pick").trim(), event.message)
+            pick.matches(trimmedMessage) -> {
+                pickRandom(trimmedMessage.removePrefix(Commands.Common.PICK).trim(), event.message)
+            }
+            locale.matches(trimmedMessage) -> {
+                setLocale(trimmedMessage.removePrefix(Commands.Common.LOCALE).trim(), event.message)
             }
         }
     }
@@ -33,17 +45,22 @@ class CommonDispatcher(client: Kord) : BaseDispatcher(client), MessageCreateList
             color = Color.MAGENTA
             field {
                 name = "Фильмы"
-                value = "`ttb!movies/help`"
+                value = getCommand(Commands.Movies.HELP, customPrefix = "movies")
                 inline = true
             }
             field {
                 name = "Игры"
-                value = "`ttb!games/help`"
+                value = getCommand(Commands.Games.HELP, customPrefix = "games")
                 inline = true
             }
             field {
-                name = "`ttb!pick`"
+                name = getCommand(Commands.Common.PICK)
                 value = "Выбирает случайный вариант из написанных в команде. Название команды и варианты надо отделять новой строкой (`Shift` + `Enter`)."
+                inline = true
+            }
+            field {
+                name = getCommand(Commands.Common.LOCALE)
+                value = "Установка языка сервера. Язык используется в других командах. Пример: `${getCommand(Commands.Common.LOCALE, format = false)} ru`"
                 inline = true
             }
         }
@@ -63,5 +80,10 @@ class CommonDispatcher(client: Kord) : BaseDispatcher(client), MessageCreateList
             }
             postMessage(message.channel, chosen, Color.ORANGE)
         }
+    }
+
+    private suspend fun setLocale(localeString: String, message: Message) {
+        val success = guildsManager.setGuildRegion(message.getGuild().id.value, localeString)
+        respondWithReaction(message, success)
     }
 }

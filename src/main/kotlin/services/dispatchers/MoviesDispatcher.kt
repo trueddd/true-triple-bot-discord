@@ -206,38 +206,38 @@ class MoviesDispatcher(
                 value = "$rulesTextStart Фильм выбирается по наибольшему количеству лайков ( :thumbsup: ) в реакциях."
             }
             field {
-                name = getCommand("set")
+                name = getCommand(Commands.Movies.SET)
                 value = "Устанавливает канал, в который была отправлена команда, как канал откуда бот будет брать список фильмов."
                 inline = true
             }
             field {
-                name = getCommand("unset")
+                name = getCommand(Commands.Movies.UNSET)
                 value = "Отменяет предыдущую команду."
                 inline = true
             }
             field {
-                name = getCommand("watched-set")
+                name = getCommand(Commands.Movies.WATCHED_SET)
                 value = "Устанавливает канал, в который была отпрвлена команда, как канал куда бот будет сохранять список просмотренных каналов."
                 inline = true
             }
             field {
-                name = getCommand("watched-unset")
+                name = getCommand(Commands.Movies.WATCHED_UNSET)
                 value = "Отменяет предыдущую команду."
                 inline = true
             }
             field {
-                name = getCommand("top")
+                name = getCommand(Commands.Movies.TOP)
                 value = "Показывает список фильмов с максимальным количеством лайков."
                 inline = true
             }
             field {
-                name = getCommand("search")
-                value = "Ищет фильм на Кинопоиске. Пример использования: `${getCommand("search", false)} Геи-ниггеры из далёкого космоса`."
+                name = getCommand(Commands.Movies.SEARCH)
+                value = "Ищет фильм на Кинопоиске. Пример использования: `${getCommand(Commands.Movies.SEARCH, format = false)} Геи-ниггеры из далёкого космоса`."
                 inline = true
             }
             field {
-                name = "`${getCommand("roll")}`"
-                value = "Выбирает случайный фильм из выборки, которую можно посмотреть по комманде ${getCommand("top")}. Если ввести параметр `-s`, бот найдёт выбранный фильм на Кинопоиске."
+                name = getCommand(Commands.Movies.ROLL)
+                value = "Выбирает случайный фильм из выборки, которую можно посмотреть по комманде ${getCommand(Commands.Movies.TOP)}. Если ввести параметр `-s`, бот найдёт выбранный фильм на Кинопоиске."
                 inline = true
             }
         }

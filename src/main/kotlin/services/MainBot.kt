@@ -27,7 +27,7 @@ class MainBot(
 
     private val gamesDispatcher = GamesDispatcher(guildsManager, epicGamesService, steamGamesService, client)
 
-    private val commonDispatcher = CommonDispatcher(client)
+    private val commonDispatcher = CommonDispatcher(guildsManager, client)
 
     private val messageListeners: Set<MessageCreateListener> by lazy {
         setOf(moviesDispatcher, gamesDispatcher, commonDispatcher)

@@ -67,8 +67,9 @@ abstract class BaseDispatcher(protected val client: Kord) {
 
     protected fun getChannelMention(channelId: String) = "<#${channelId}>"
 
-    fun getCommand(commandName: String, format: Boolean = true): String {
-        val commandText = "${BaseBot.BOT_PREFIX}${dispatcherPrefix}${PREFIX_DELIMITER}${commandName}"
+    fun getCommand(commandName: String, customPrefix: String? = null, format: Boolean = true): String {
+        val commandPrefix = customPrefix ?: dispatcherPrefix
+        val commandText = "${BaseBot.BOT_PREFIX}${commandPrefix}${if (commandPrefix.isEmpty()) "" else PREFIX_DELIMITER}${commandName}"
         return if (format) {
             "`$commandText`"
         } else {
