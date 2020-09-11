@@ -7,7 +7,6 @@ import io.ktor.request.receive
 import java.awt.Color
 import java.text.SimpleDateFormat
 import java.util.*
-import java.util.regex.Pattern
 
 suspend inline fun <reified T : Any> ApplicationCall.receiveSafe(): T? {
     return try {
@@ -37,6 +36,6 @@ suspend fun MessageChannelBehavior.createBotMessage(message: String, embedColor:
     }
 }
 
-fun String.commandRegex(singleWordCommand: Boolean = true): Regex {
-    return Pattern.compile("^$this${if (singleWordCommand) "$" else ".*"}").toRegex()
+fun String.commandRegex(singleWordCommand: Boolean = true, vararg flags: RegexOption): Regex {
+    return Regex("^$this${if (singleWordCommand) "$" else ".*"}", flags.toSet())
 }

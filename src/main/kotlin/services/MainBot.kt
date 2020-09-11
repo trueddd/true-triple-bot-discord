@@ -29,15 +29,13 @@ class MainBot(
 
     private val commonDispatcher = CommonDispatcher(guildsManager, client)
 
-    private val messageListeners: Set<MessageCreateListener> by lazy {
-        setOf(moviesDispatcher, gamesDispatcher, commonDispatcher)
-    }
-
     private val reactionListeners: Set<ReactionAddListener> by lazy {
         setOf(moviesDispatcher)
     }
 
-    private val botPrefixPattern = Pattern.compile("^$BOT_PREFIX.*").toRegex()
+    private val botPrefixPattern = Regex("^$BOT_PREFIX.*", RegexOption.DOT_MATCHES_ALL)
+    private val gamesPattern = Regex("^${gamesDispatcher.getPrefix()}.*", RegexOption.DOT_MATCHES_ALL)
+    private val moviesPattern = Regex("^${moviesDispatcher.getPrefix()}.*", RegexOption.DOT_MATCHES_ALL)
 
     override suspend fun attach() {
         val belPattern = Pattern.compile("(жыве(\\s+)беларусь)", Pattern.CASE_INSENSITIVE).toRegex()
@@ -57,9 +55,17 @@ class MainBot(
                 return@on
             }
             val messageText = message.content.removePrefix(BOT_PREFIX)
-            messageListeners.firstOrNull { messageText.startsWith(it.getPrefix()) }?.let {
-                it.onMessageCreate(this, messageText.removePrefix("${it.getPrefix()}${BaseDispatcher.PREFIX_DELIMITER}"))
+            val dispatcher = when {
+                gamesPattern.matches(messageText) -> gamesDispatcher
+                moviesPattern.matches(messageText) -> moviesDispatcher
+                else -> commonDispatcher
             }
+            val trimmedMessage = if (dispatcher is CommonDispatcher) {
+                messageText
+            } else {
+                messageText.removePrefix("${dispatcher.getPrefix()}${BaseDispatcher.PREFIX_DELIMITER}")
+            }
+            dispatcher.onMessageCreate(this, trimmedMessage)
         }
 
         client.on<ReadyEvent> {

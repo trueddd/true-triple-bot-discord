@@ -23,7 +23,7 @@ class CommonDispatcher(
     }
 
     private val help = Commands.Common.HELP.commandRegex()
-    private val pick = Commands.Common.PICK.commandRegex(singleWordCommand = false)
+    private val pick = Commands.Common.PICK.commandRegex(false, RegexOption.DOT_MATCHES_ALL)
     private val locale = Commands.Common.LOCALE.commandRegex(singleWordCommand = false)
 
     override suspend fun onMessageCreate(event: MessageCreateEvent, trimmedMessage: String) {
@@ -67,6 +67,7 @@ class CommonDispatcher(
     }
 
     private suspend fun pickRandom(messageText: String, message: Message) {
+        println(messageText)
         val options = messageText
             .split("\n")
             .mapNotNull { if (it.isEmpty()) null else it }
