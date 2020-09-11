@@ -17,11 +17,13 @@ import io.ktor.server.netty.Netty
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import org.slf4j.event.Level
+import services.BaseBot.Companion.BOT_PREFIX
 import services.EpicGamesService
 import services.MainBot
 import services.SteamGamesService
 import services.TestBot
 import utils.AppEnvironment
+import utils.Commands
 import utils.provideDatabase
 
 fun main(args: Array<String>) {
@@ -47,7 +49,9 @@ fun Application.module() {
             bot.attach()
         }
 
-        client.login()
+        client.login {
+            listening("${BOT_PREFIX}${Commands.Common.HELP}")
+        }
     }
 
     install(CallLogging) {
