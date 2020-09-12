@@ -1,20 +1,12 @@
 package utils
 
+import com.gitlab.kordlib.core.Kord
 import com.gitlab.kordlib.core.behavior.channel.MessageChannelBehavior
 import com.gitlab.kordlib.core.behavior.channel.createMessage
-import io.ktor.application.ApplicationCall
-import io.ktor.request.receive
+import services.BaseBot
 import java.awt.Color
 import java.text.SimpleDateFormat
 import java.util.*
-
-suspend inline fun <reified T : Any> ApplicationCall.receiveSafe(): T? {
-    return try {
-        receive<T>()
-    } catch (e: Exception) {
-        null
-    }
-}
 
 fun String.egsDate(): Date {
     return try {
@@ -38,4 +30,10 @@ suspend fun MessageChannelBehavior.createBotMessage(message: String, embedColor:
 
 fun String.commandRegex(singleWordCommand: Boolean = true, vararg flags: RegexOption): Regex {
     return Regex("^$this${if (singleWordCommand) "$" else ".*"}", flags.toSet())
+}
+
+suspend fun Kord.setDefaultStatus() {
+    editPresence {
+        listening("${BaseBot.BOT_PREFIX}${Commands.Common.HELP}")
+    }
 }

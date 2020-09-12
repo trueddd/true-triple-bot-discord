@@ -10,6 +10,10 @@ object Commands {
         const val WATCHED_UNSET = "watched-unset"
         const val ROLL = "roll"
         const val SEARCH = "search"
+        const val NOTIFY_SET = "notify-set"
+        const val NOTIFY_UNSET = "notify-unset"
+        const val ROLE_SET = "role-set"
+        const val ROLE_UNSET = "role-unset"
     }
     object Games {
         const val HELP = "help"

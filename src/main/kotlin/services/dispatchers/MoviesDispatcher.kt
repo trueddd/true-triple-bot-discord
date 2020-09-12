@@ -11,6 +11,7 @@ import data.Movie
 import db.GuildsManager
 import utils.Commands
 import utils.commandRegex
+import utils.setDefaultStatus
 import java.awt.Color
 import java.text.SimpleDateFormat
 import java.util.*
@@ -133,6 +134,10 @@ class MoviesDispatcher(
     private val watchedUnset = Commands.Movies.WATCHED_UNSET.commandRegex()
     private val roll = Commands.Movies.ROLL.commandRegex(singleWordCommand = false)
     private val search = Commands.Movies.SEARCH.commandRegex(singleWordCommand = false)
+    private val roleSet = Commands.Movies.ROLE_SET.commandRegex(singleWordCommand = false)
+    private val roleUnset = Commands.Movies.ROLE_UNSET.commandRegex(singleWordCommand = false)
+    private val notifySet = Commands.Movies.NOTIFY_SET.commandRegex()
+    private val notifyUnset = Commands.Movies.NOTIFY_UNSET.commandRegex()
 
     override suspend fun onMessageCreate(event: MessageCreateEvent, trimmedMessage: String) {
         val guildId = event.message.getGuild().id.value
@@ -172,22 +177,68 @@ class MoviesDispatcher(
             trimmedMessage.matches(search) -> {
                 searchForMovie(event.message.channel, trimmedMessage.removePrefix("search").trim())
             }
+            trimmedMessage.matches(notifySet) -> {
+                val changed = guildsManager.setMoviesNotifyChannel(guildId, channelId)
+                respondWithReaction(event.message, changed)
+            }
+            trimmedMessage.matches(notifyUnset) -> {
+                val changed = guildsManager.setMoviesNotifyChannel(guildId, null)
+                respondWithReaction(event.message, changed)
+            }
+            trimmedMessage.matches(roleSet) -> {
+                val roleId = trimmedMessage
+                    .removePrefix(Commands.Movies.ROLE_SET)
+                    .trim()
+                    .let {
+                        val regex = Regex("<@&(\\d+)>")
+                        if (it.matches(regex)) {
+                            it.replace(regex, "$1")
+                        } else null
+                    } ?: run {
+                    respondWithReaction(event.message, false)
+                    return
+                }
+                val changed = guildsManager.setMoviesRoleId(guildId, roleId)
+                respondWithReaction(event.message, changed)
+            }
+            trimmedMessage.matches(roleUnset) -> {
+                val changed = guildsManager.setMoviesRoleId(guildId, null)
+                respondWithReaction(event.message, changed)
+            }
         }
     }
 
     override suspend fun onReactionAdd(event: ReactionAddEvent) {
         val guildId = event.guildId?.value ?: ""
         val channelId = event.message.channelId.value
-        if (event.emoji.name == "✅" && guildsManager.getMoviesListChannel(guildId) == channelId) {
-            val watchedChannelId = guildsManager.getWatchedMoviesChannelId(guildId) ?: return
-            val movieMessage = event.message.asMessage()
-            event.message.delete()
-            client.rest.channel.createMessage(watchedChannelId) {
-                content = movieMessage.content
+        when {
+            event.emoji.name == "✅" && guildsManager.getMoviesListChannel(guildId) == channelId -> {
+                client.setDefaultStatus()
+                val watchedChannelId = guildsManager.getWatchedMoviesChannelId(guildId) ?: return
+                val movieName = event.message.asMessage().content
+                event.message.delete()
+                client.rest.channel.createMessage(watchedChannelId) {
+                    content = movieName
+                }
+            }
+            event.emoji.name == "\uD83D\uDC40" && guildsManager.getMoviesListChannel(guildId) == channelId -> {
+                val movieName = event.message.asMessage().content
+                client.editPresence {
+                    watching(movieName)
+                }
+                guildsManager.getMoviesNotifyChannel(guildId)?.let { moviesNotifyChannelId ->
+                    // <@&721035806592073908>
+                    val moviesRoleId = guildsManager.getMoviesRoleId(guildId)
+                    val notification = moviesRoleId?.let {
+                        "<@&$it>, смотрим $movieName"
+                    } ?: "Смотрим $movieName"
+                    postMessage(moviesNotifyChannelId, notification, messageColor = Color.BLUE)
+                }
             }
         }
     }
 
+    // fixme: update manual
     suspend fun showHelp(channel: MessageChannelBehavior, moviesChannelId: String?) {
         val rulesTextStart = if (moviesChannelId != null) {
             "В выборку попадают первые 100 фильмов из канала ${getChannelMention(moviesChannelId)}."

@@ -7,46 +7,41 @@ class GuildsManager(
     private val database: Database
 ) {
 
-    fun getMoviesListChannel(guildId: String): String? {
+    private fun getString(guildId: String, column: Column<String?>): String? {
         return transaction(database) {
-            Guilds.select { Guilds.id eq guildId }.singleOrNull()?.getOrNull(Guilds.moviesListChannelId)
+            Guilds.select { Guilds.id eq guildId }.singleOrNull()?.getOrNull(column)
         }
+    }
+
+    private fun setString(guildId: String, column: Column<String?>, property: String?): Boolean {
+        return transaction(database) {
+            if (Guilds.select { Guilds.id eq guildId }.singleOrNull() != null) {
+                Guilds.update({ Guilds.id eq guildId }) {
+                    it[column] = property
+                } > 0
+            } else {
+                Guilds.insert {
+                    it[id] = guildId
+                    it[column] = property
+                }.resultedValues?.size?.let { it > 0 } ?: false
+            }
+        }
+    }
+
+    fun getMoviesListChannel(guildId: String): String? {
+        return getString(guildId, Guilds.moviesListChannelId)
     }
 
     fun setMoviesListChannel(guildId: String, channelId: String?): Boolean {
-        return transaction(database) {
-            if (Guilds.select { Guilds.id eq guildId }.singleOrNull() != null) {
-                Guilds.update({ Guilds.id eq guildId }) {
-                    it[moviesListChannelId] = channelId
-                } > 0
-            } else {
-                Guilds.insert {
-                    it[id] = guildId
-                    it[moviesListChannelId] = channelId
-                }.resultedValues?.size?.let { it > 0 } ?: false
-            }
-        }
+        return setString(guildId, Guilds.moviesListChannelId, channelId)
     }
 
     fun getWatchedMoviesChannelId(guildId: String): String? {
-        return transaction(database) {
-            Guilds.select { Guilds.id eq guildId }.singleOrNull()?.getOrNull(Guilds.watchedMoviesChannelId)
-        }
+        return getString(guildId, Guilds.watchedMoviesChannelId)
     }
 
     fun setWatchedMoviesListChannel(guildId: String, channelId: String?): Boolean {
-        return transaction(database) {
-            if (Guilds.select { Guilds.id eq guildId }.singleOrNull() != null) {
-                Guilds.update({ Guilds.id eq guildId }) {
-                    it[watchedMoviesChannelId] = channelId
-                } > 0
-            } else {
-                Guilds.insert {
-                    it[id] = guildId
-                    it[watchedMoviesChannelId] = channelId
-                }.resultedValues?.size?.let { it > 0 } ?: false
-            }
-        }
+        return setString(guildId, Guilds.watchedMoviesChannelId, channelId)
     }
 
     fun getGamesChannelsIds(): List<Pair<String, String>> {
@@ -60,38 +55,30 @@ class GuildsManager(
     }
 
     fun setGamesChannel(guildId: String, channelId: String?): Boolean {
-        return transaction(database) {
-            if (Guilds.select { Guilds.id eq guildId }.singleOrNull() != null) {
-                Guilds.update({ Guilds.id eq guildId }) {
-                    it[gamesChannelId] = channelId
-                } > 0
-            } else {
-                Guilds.insert {
-                    it[id] = guildId
-                    it[gamesChannelId] = channelId
-                }.resultedValues?.size?.let { it > 0 } ?: false
-            }
-        }
+        return setString(guildId, Guilds.gamesChannelId, channelId)
     }
 
     fun getGuildRegion(guildId: String): String? {
-        return transaction(database) {
-            Guilds.select { Guilds.id eq guildId }.singleOrNull()?.getOrNull(Guilds.region)
-        }
+        return getString(guildId, Guilds.region)
     }
 
     fun setGuildRegion(guildId: String, newRegion: String?): Boolean {
-        return transaction(database) {
-            if (Guilds.select { Guilds.id eq guildId }.singleOrNull() != null) {
-                Guilds.update({ Guilds.id eq guildId }) {
-                    it[region] = newRegion
-                } > 0
-            } else {
-                Guilds.insert {
-                    it[id] = guildId
-                    it[region] = newRegion
-                }.resultedValues?.size?.let { it > 0 } ?: false
-            }
-        }
+        return setString(guildId, Guilds.region, newRegion)
+    }
+
+    fun getMoviesNotifyChannel(guildId: String): String? {
+        return getString(guildId, Guilds.moviesNotifyChannelId)
+    }
+
+    fun setMoviesNotifyChannel(guildId: String, channelId: String?): Boolean {
+        return setString(guildId, Guilds.moviesNotifyChannelId, channelId)
+    }
+
+    fun getMoviesRoleId(guildId: String): String? {
+        return getString(guildId, Guilds.moviesRoleId)
+    }
+
+    fun setMoviesRoleId(guildId: String, roleId: String?): Boolean {
+        return setString(guildId, Guilds.moviesRoleId, roleId)
     }
 }
