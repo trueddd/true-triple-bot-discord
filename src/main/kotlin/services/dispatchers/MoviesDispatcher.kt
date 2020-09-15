@@ -223,23 +223,21 @@ class MoviesDispatcher(
             }
             event.emoji.name == "\uD83D\uDC40" && guildsManager.getMoviesListChannel(guildId) == channelId -> {
                 val movieName = event.message.asMessage().content
-                client.editPresence {
-                    watching(movieName)
-                }
+//                client.editPresence {
+//                    watching(movieName)
+//                }
                 guildsManager.getMoviesNotifyChannel(guildId)?.let { moviesNotifyChannelId ->
-                    // <@&721035806592073908>
                     val moviesRoleId = guildsManager.getMoviesRoleId(guildId)
                     val notification = moviesRoleId?.let {
                         "<@&$it>, смотрим $movieName"
-                    } ?: "Смотрим $movieName"
+                    } ?: "Смотрим \"$movieName\""
                     postMessage(moviesNotifyChannelId, notification, messageColor = Color.BLUE)
                 }
             }
         }
     }
 
-    // fixme: update manual
-    suspend fun showHelp(channel: MessageChannelBehavior, moviesChannelId: String?) {
+    private suspend fun showHelp(channel: MessageChannelBehavior, moviesChannelId: String?) {
         val rulesTextStart = if (moviesChannelId != null) {
             "В выборку попадают первые 100 фильмов из канала ${getChannelMention(moviesChannelId)}."
         } else {
@@ -289,6 +287,35 @@ class MoviesDispatcher(
             field {
                 name = getCommand(Commands.Movies.ROLL)
                 value = "Выбирает случайный фильм из выборки, которую можно посмотреть по комманде ${getCommand(Commands.Movies.TOP)}. Если ввести параметр `-s`, бот найдёт выбранный фильм на Кинопоиске."
+                inline = true
+            }
+            field {
+                val inMoviesChannel = if (moviesChannelId != null) {
+                    "Поставив реакцию :eyes: под выбранным фильмом в канале ${getChannelMention(moviesChannelId)}"
+                } else {
+                    "Поставив реакцию :eyes: под выбранным фильмом в неустановленном канале для фильмов"
+                }
+                name = "Уведомления для киноманов"
+                value = "$inMoviesChannel, можно для установленной роли сделать уведомление о начале просмотра фильма."
+            }
+            field {
+                name = getCommand(Commands.Movies.ROLE_SET)
+                value = "Устанавливает роль, которая будет получать уведомления о начале просмотра фильма."
+                inline = true
+            }
+            field {
+                name = getCommand(Commands.Movies.ROLE_UNSET)
+                value = "Сбрасывает роль для уведомлений."
+                inline = true
+            }
+            field {
+                name = getCommand(Commands.Movies.NOTIFY_SET)
+                value = "Устанавливает текущий канал, как канал, куда будут присылаться уведомления."
+                inline = true
+            }
+            field {
+                name = getCommand(Commands.Movies.NOTIFY_UNSET)
+                value = "Отменяет предыдущую команду."
                 inline = true
             }
         }

@@ -44,13 +44,13 @@ class CommonDispatcher(
         channel.createEmbed {
             color = Color.MAGENTA
             field {
-                name = "Фильмы"
-                value = getCommand(Commands.Movies.HELP, customPrefix = "movies")
+                name = getCommand(Commands.Movies.HELP, customPrefix = "movies")
+                value = "Справка по командам для фильмов"
                 inline = true
             }
             field {
-                name = "Игры"
-                value = getCommand(Commands.Games.HELP, customPrefix = "games")
+                name = getCommand(Commands.Games.HELP, customPrefix = "games")
+                value = "Справка по командам по играм"
                 inline = true
             }
             field {
