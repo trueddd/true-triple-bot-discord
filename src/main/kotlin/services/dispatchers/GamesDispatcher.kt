@@ -147,7 +147,15 @@ class GamesDispatcher(
                     field {
                         name = it.name
                         value = if (it.originalPrice != null && it.currentPrice != null) {
-                            "[~~${it.originalPrice}~~ ${it.currentPrice}](${it.url})"
+                            buildString {
+                                append("[")
+                                if (it.originalPrice.isNotEmpty()) {
+                                    append("~~${it.originalPrice}~~ ")
+                                }
+                                append(it.currentPrice)
+                                append("]")
+                                append("(${it.url})")
+                            }
                         } else {
                             "[See in the store](${it.url})"
                         }
