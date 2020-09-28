@@ -223,9 +223,6 @@ class MoviesDispatcher(
             }
             event.emoji.name == "\uD83D\uDC40" && guildsManager.getMoviesListChannel(guildId) == channelId -> {
                 val movieName = event.message.asMessage().content
-//                client.editPresence {
-//                    watching(movieName)
-//                }
                 guildsManager.getMoviesNotifyChannel(guildId)?.let { moviesNotifyChannelId ->
                     val moviesRoleId = guildsManager.getMoviesRoleId(guildId)
                     val notification = moviesRoleId?.let {

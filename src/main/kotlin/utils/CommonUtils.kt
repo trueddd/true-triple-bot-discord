@@ -37,3 +37,11 @@ suspend fun Kord.setDefaultStatus() {
         listening("${BaseBot.BOT_PREFIX}${Commands.Common.HELP}")
     }
 }
+
+fun String.replaceIfMatches(regex: Regex, replacement: String): String? {
+    return if (matches(regex)) {
+        replace(regex, replacement)
+    } else {
+        null
+    }
+}

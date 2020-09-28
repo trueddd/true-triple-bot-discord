@@ -26,5 +26,6 @@ object Commands {
         const val HELP = "help"
         const val PICK = "pick"
         const val LOCALE = "locale"
+        const val ROLE_GETTER = "role-get"
     }
 }

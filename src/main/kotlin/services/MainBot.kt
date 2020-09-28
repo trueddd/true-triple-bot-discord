@@ -3,18 +3,17 @@ package services
 import com.gitlab.kordlib.core.Kord
 import com.gitlab.kordlib.core.event.gateway.ReadyEvent
 import com.gitlab.kordlib.core.event.message.MessageCreateEvent
+import com.gitlab.kordlib.core.event.message.MessageDeleteEvent
 import com.gitlab.kordlib.core.event.message.ReactionAddEvent
+import com.gitlab.kordlib.core.event.message.ReactionRemoveEvent
 import com.gitlab.kordlib.core.on
 import db.GuildsManager
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import services.dispatchers.*
-import utils.createBotMessage
-import java.awt.Color
 import java.time.Duration
 import java.time.LocalDateTime
 import java.time.temporal.ChronoUnit
-import java.util.regex.Pattern
 
 class MainBot(
     guildsManager: GuildsManager,
@@ -29,8 +28,14 @@ class MainBot(
 
     private val commonDispatcher = CommonDispatcher(guildsManager, client)
 
-    private val reactionListeners: Set<ReactionAddListener> by lazy {
-        setOf(moviesDispatcher)
+    private val roleGetterDispatcher = RoleGetterDispatcher(guildsManager, client)
+
+    private val addReactionListeners: Set<ReactionAddListener> by lazy {
+        setOf(moviesDispatcher, roleGetterDispatcher)
+    }
+
+    private val removeReactionListeners: Set<ReactionRemoveListener> by lazy {
+        setOf(roleGetterDispatcher)
     }
 
     private val botPrefixPattern = Regex("^$BOT_PREFIX.*", RegexOption.DOT_MATCHES_ALL)
@@ -38,19 +43,20 @@ class MainBot(
     private val moviesPattern = Regex("^${moviesDispatcher.getPrefix()}.*", RegexOption.DOT_MATCHES_ALL)
 
     override suspend fun attach() {
-        val belPattern = Pattern.compile("(жыве(\\s+)беларусь)", Pattern.CASE_INSENSITIVE).toRegex()
         client.on<ReactionAddEvent> {
-            reactionListeners.forEach {
+            addReactionListeners.forEach {
                 it.onReactionAdd(this)
             }
         }
-        client.on<MessageCreateEvent> {
-            launch {
-                if (message.content.matches(belPattern)
-                    && guildsManager.getGuildRegion(message.getGuild().id.value) == "by") {
-                    message.channel.createBotMessage(BEL_RESPONSE, embedColor = Color.RED)
-                }
+        client.on<ReactionRemoveEvent> {
+            removeReactionListeners.forEach {
+                it.onReactionRemove(this)
             }
+        }
+        client.on<MessageDeleteEvent> {
+            roleGetterDispatcher.onMessageDelete(this)
+        }
+        client.on<MessageCreateEvent> {
             if (!message.content.matches(botPrefixPattern)) {
                 return@on
             }
@@ -106,10 +112,5 @@ class MainBot(
                 } while (true)
             }
         }
-    }
-
-    companion object {
-        private const val FLAG_EMOJI = "<:flag:752634825818636407>"
-        const val BEL_RESPONSE = "$FLAG_EMOJI$FLAG_EMOJI ЖЫВЕ! $FLAG_EMOJI$FLAG_EMOJI"
     }
 }

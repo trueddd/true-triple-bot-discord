@@ -1,5 +1,7 @@
 package services.dispatchers
 
+import com.gitlab.kordlib.common.entity.Permission
+import com.gitlab.kordlib.common.entity.Snowflake
 import com.gitlab.kordlib.core.Kord
 import com.gitlab.kordlib.core.behavior.channel.MessageChannelBehavior
 import com.gitlab.kordlib.core.behavior.channel.createEmbed
@@ -8,6 +10,7 @@ import com.gitlab.kordlib.core.event.message.MessageCreateEvent
 import db.GuildsManager
 import utils.Commands
 import utils.commandRegex
+import utils.replaceIfMatches
 import java.awt.Color
 
 class CommonDispatcher(
@@ -25,6 +28,7 @@ class CommonDispatcher(
     private val help = Commands.Common.HELP.commandRegex()
     private val pick = Commands.Common.PICK.commandRegex(false, RegexOption.DOT_MATCHES_ALL)
     private val locale = Commands.Common.LOCALE.commandRegex(singleWordCommand = false)
+    private val roleSet = Regex("^${Commands.Common.ROLE_GETTER}\\s+<@&(\\d+)>\\s+<:(.+):\\d+>.*$")
 
     override suspend fun onMessageCreate(event: MessageCreateEvent, trimmedMessage: String) {
         when {
@@ -36,6 +40,17 @@ class CommonDispatcher(
             }
             locale.matches(trimmedMessage) -> {
                 setLocale(trimmedMessage.removePrefix(Commands.Common.LOCALE).trim(), event.message)
+            }
+            roleSet.matches(trimmedMessage) -> {
+                val guildId = event.guildId ?: return
+                if (event.message.author?.asMember(guildId)?.getPermissions()?.contains(Permission.Administrator) != true) {
+                    return
+                }
+                val role = trimmedMessage.replaceIfMatches(roleSet, "$1")
+                val emoji = trimmedMessage.replaceIfMatches(roleSet, "$2")
+                if (role != null && emoji != null) {
+                    guildsManager.setRoleGetterEmoji(event.message.id.value, role, emoji)
+                }
             }
         }
     }

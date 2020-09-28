@@ -28,6 +28,42 @@ class GuildsManager(
         }
     }
 
+    fun setRoleGetterEmoji(messageId: String, roleId: String, emoji: String): Boolean {
+        return transaction(database) {
+            ReactiveRoles.insert {
+                it[ReactiveRoles.messageId] = messageId
+                it[ReactiveRoles.roleId] = roleId
+                it[ReactiveRoles.emoji] = emoji
+            }.resultedValues?.size?.let { it > 0 } ?: false
+        }
+    }
+
+    fun unsetRoleGetter(messageId: String): Boolean {
+        return transaction(database) {
+            ReactiveRoles.deleteWhere {
+                ReactiveRoles.messageId eq messageId
+            } > 0
+        }
+    }
+
+    fun getRoleIdByMessageAndEmoji(messageId: String, emoji: String): String? {
+        return transaction(database) {
+            ReactiveRoles.select {
+                (ReactiveRoles.messageId eq messageId) and (ReactiveRoles.emoji eq emoji)
+            }
+                .singleOrNull()
+                ?.getOrNull(ReactiveRoles.roleId)
+        }
+    }
+
+    fun isRoleGetterMessage(messageId: String): Boolean {
+        return transaction(database) {
+            ReactiveRoles.select {
+                ReactiveRoles.messageId eq messageId
+            }.singleOrNull() != null
+        }
+    }
+
     fun getMoviesListChannel(guildId: String): String? {
         return getString(guildId, Guilds.moviesListChannelId)
     }
