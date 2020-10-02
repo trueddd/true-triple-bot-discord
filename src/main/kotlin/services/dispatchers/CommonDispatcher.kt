@@ -1,13 +1,13 @@
 package services.dispatchers
 
 import com.gitlab.kordlib.common.entity.Permission
-import com.gitlab.kordlib.common.entity.Snowflake
 import com.gitlab.kordlib.core.Kord
 import com.gitlab.kordlib.core.behavior.channel.MessageChannelBehavior
 import com.gitlab.kordlib.core.behavior.channel.createEmbed
 import com.gitlab.kordlib.core.entity.Message
 import com.gitlab.kordlib.core.event.message.MessageCreateEvent
 import db.GuildsManager
+import services.BaseBot
 import utils.Commands
 import utils.commandRegex
 import utils.replaceIfMatches
@@ -61,22 +61,22 @@ class CommonDispatcher(
             field {
                 name = getCommand(Commands.Movies.HELP, customPrefix = "movies")
                 value = "Справка по командам для фильмов"
-                inline = true
             }
             field {
                 name = getCommand(Commands.Games.HELP, customPrefix = "games")
                 value = "Справка по командам по играм"
-                inline = true
             }
             field {
                 name = getCommand(Commands.Common.PICK)
                 value = "Выбирает случайный вариант из написанных в команде. Название команды и варианты надо отделять новой строкой (`Shift` + `Enter`)."
-                inline = true
             }
             field {
                 name = getCommand(Commands.Common.LOCALE)
                 value = "Установка языка сервера. Язык используется в других командах. Пример: `${getCommand(Commands.Common.LOCALE, format = false)} ru`"
-                inline = true
+            }
+            field {
+                name = getCommand(Commands.Common.ROLE_GETTER)
+                value = "Создаёт выдачу роли пользователям, которые поставят указанное эмодзи в реакцию под сообщением с этой командой. Пример: `${BaseBot.BOT_PREFIX}${Commands.Common.ROLE_GETTER} <выдаваемая роль> <эмодзи>`. Также можно снять роль, убрав свою реакцию."
             }
         }
     }
