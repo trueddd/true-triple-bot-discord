@@ -40,7 +40,7 @@ class SteamGamesService(database: Database) : BaseService(database) {
                     val finalPrice = if (regionalPrice?.final != null) {
                         SteamGamePrice(regionalPrice.final, regionalPrice.initial, "-${regionalPrice.discountPercent}%")
                     } else {
-                        it.price
+                        SteamGamePrice(null, null, it.price.discount)
                     }
                     SteamGame(it.id, it.name, finalPrice, it.url)
                 }
