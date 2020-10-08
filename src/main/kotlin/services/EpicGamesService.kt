@@ -73,10 +73,18 @@ class EpicGamesService(database: Database) : BaseService(database) {
             println("Loading games from network")
             val response = client.get<FreeGamesResponse>(baseUrl)
             val elements = response.data.catalog.searchStore.elements
-            elements.map {
-                val dates = it.promotions?.current?.firstOrNull()?.offers?.firstOrNull()?.let { offer -> offer.startDate.egsDate() to offer.endDate.egsDate() }
-                    ?: it.promotions?.upcoming?.firstOrNull()?.offers?.minByOrNull { item -> item.startDate }?.let { offer -> offer.startDate.egsDate() to offer.endDate.egsDate() }
-                GiveAwayGame(it.id, it.title, dates?.let { d -> OfferDates(d.first.toLocalDateTime(), d.second.toLocalDateTime()) }, LocalDateTime.now(), it.productSlug)
+            elements.map { element ->
+                val dates = element.promotions?.current?.firstOrNull()?.offers?.firstOrNull()
+                    ?.let { it.startDate.egsDate() to it.endDate.egsDate() }
+                    ?: element.promotions?.upcoming?.firstOrNull()?.offers?.minByOrNull { item -> item.startDate }
+                    ?.let { it.startDate.egsDate() to it.endDate.egsDate() }
+                GiveAwayGame(
+                    element.id,
+                    element.title,
+                    dates?.let { OfferDates(it.first.toLocalDateTime(), it.second.toLocalDateTime()) },
+                    LocalDateTime.now(),
+                    element.productSlug
+                )
             }
         } catch (e: Exception) {
             e.printStackTrace()

@@ -2,6 +2,7 @@ package services
 
 import data.steam.GamePriceInfo
 import data.steam.SteamGame
+import data.steam.SteamGamePrice
 import io.ktor.client.request.*
 import org.jetbrains.exposed.sql.Database
 import org.jsoup.Jsoup
@@ -23,7 +24,8 @@ class SteamGamesService(database: Database) : BaseService(database) {
                 val name = it.getElementsByClass("tab_item_name").first().text()
                 val currentPrice = it.getElementsByClass("discount_final_price").firstOrNull()?.text()
                 val originalPrice = it.getElementsByClass("discount_original_price").firstOrNull()?.text()
-                SteamGame(id, name, currentPrice, originalPrice, url)
+                val discount = it.getElementsByClass("discount_pct").firstOrNull()?.text()
+                SteamGame(id, name, SteamGamePrice(currentPrice, originalPrice, discount ?: "-0%"), url)
             }
             val steamGamesWithRegions = mutableMapOf<String, List<SteamGame>>()
             val gameIds = games.joinToString(",") { it.id }
@@ -34,8 +36,13 @@ class SteamGamesService(database: Database) : BaseService(database) {
                     parameter("appids", gameIds)
                 }
                 steamGamesWithRegions[region] = games.map {
-                    val price = gamesPrices[it.id]?.data?.priceOverview
-                    SteamGame(it.id, it.name, price?.final ?: it.currentPrice, price?.initial ?: it.originalPrice, it.url)
+                    val regionalPrice = gamesPrices[it.id]?.data?.priceOverview
+                    val finalPrice = if (regionalPrice?.final != null) {
+                        SteamGamePrice(regionalPrice.final, regionalPrice.initial, "-${regionalPrice.discountPercent}%")
+                    } else {
+                        it.price
+                    }
+                    SteamGame(it.id, it.name, finalPrice, it.url)
                 }
             }
             steamGamesWithRegions

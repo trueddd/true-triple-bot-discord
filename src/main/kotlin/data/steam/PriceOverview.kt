@@ -6,5 +6,7 @@ data class PriceOverview(
     @SerializedName(value = "initial_formatted")
     val initial: String,
     @SerializedName(value = "final_formatted")
-    val final: String?
+    val final: String?,
+    @SerializedName(value = "discount_percent")
+    val discountPercent: Int?
 )

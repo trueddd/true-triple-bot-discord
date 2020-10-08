@@ -146,18 +146,18 @@ class GamesDispatcher(
                 elements.forEach {
                     field {
                         name = it.name
-                        value = if (it.originalPrice != null && it.currentPrice != null) {
+                        value = if (it.price.originalPrice != null && it.price.currentPrice != null) {
                             buildString {
                                 append("[")
-                                if (it.originalPrice.isNotEmpty()) {
-                                    append("~~${it.originalPrice}~~ ")
+                                if (it.price.originalPrice.isNotEmpty()) {
+                                    append("~~${it.price.originalPrice}~~ ")
                                 }
-                                append(it.currentPrice)
+                                append(it.price.currentPrice)
                                 append("]")
                                 append("(${it.url})")
                             }
                         } else {
-                            "[See in the store](${it.url})"
+                            "[Bundle ${it.price.discount}](${it.url})"
                         }
                         inline = true
                     }

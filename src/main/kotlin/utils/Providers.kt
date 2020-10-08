@@ -2,6 +2,7 @@ package utils
 
 import data.egs.GiveAwayGames
 import db.Guilds
+import db.ReactiveRoles
 import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.SchemaUtils
 import org.jetbrains.exposed.sql.transactions.transaction
@@ -16,7 +17,7 @@ fun provideDatabase(): Database {
         println("Connecting DB at ${it.url}")
         transaction(it) {
             println("Creating tables")
-            SchemaUtils.create(Guilds, GiveAwayGames)
+            SchemaUtils.create(Guilds, GiveAwayGames, ReactiveRoles)
         }
     }
 }
