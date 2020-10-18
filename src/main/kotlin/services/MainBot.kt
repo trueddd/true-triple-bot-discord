@@ -93,16 +93,15 @@ class MainBot(
                     }
                 delay(startDelay)
                 do {
-                    val observing = guildsManager.getGamesChannelsIds()
-                    epicGamesService.loadDistinct()?.let { games ->
-                        observing
-                            .forEach {
-                                gamesDispatcher.showEgsGames(it.second, games)
-                            }
+                    val gamesGuildsAndChannels = guildsManager.getGamesChannelsIds()
+                    epicGamesService.load().let { games ->
+                        gamesGuildsAndChannels.forEach {
+                            gamesDispatcher.showEgsGames(it.second, games)
+                        }
                     }
-                    val guildsWithRegions = observing.map { it.first to (guildsManager.getGuildRegion(it.first) ?: "en") }
+                    val guildsWithRegions = gamesGuildsAndChannels.map { it.first to (guildsManager.getGuildRegion(it.first) ?: "en") }
                     val steamGames = steamGamesService.loadGames(guildsWithRegions.map { it.second }.distinct())
-                    observing.forEach { (guildId, channelId) ->
+                    gamesGuildsAndChannels.forEach { (guildId, channelId) ->
                         val region = guildsWithRegions.first { it.first == guildId }.second
                         val games = steamGames[region] ?: return@forEach
                         gamesDispatcher.showSteamGames(channelId, games)
