@@ -99,6 +99,11 @@ class GamesDispatcher(
                 value = "Показывает список текущих и будущих раздач в Epic Games Store."
                 inline = true
             }
+            field {
+                name = getCommand(Commands.Games.GOG)
+                value = "Показывает список игр из магазина GOG со вкладки *Со скидкой*."
+                inline = true
+            }
         }
     }
 
