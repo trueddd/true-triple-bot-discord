@@ -12,7 +12,7 @@ class SteamGamesService(database: Database) : BaseService(database) {
     private val storeUrl = "https://store.steampowered.com/specials#p=0&tab=TopSellers"
     private val pricesUrl = "https://store.steampowered.com/api/appdetails/"
 
-    suspend fun loadGames(regions: List<String> = listOf("en")): Map<String, List<SteamGame>> {
+    suspend fun loadGames(regions: List<String> = listOf("en")): Map<String, List<SteamGame>>? {
         return try {
             val response = client.get<String>(storeUrl) {
                 header("Accept-Language", "ru-RU")
@@ -49,7 +49,7 @@ class SteamGamesService(database: Database) : BaseService(database) {
         } catch (e: Exception) {
             e.printStackTrace()
             println("Error steam loading")
-            emptyMap()
+            null
         }
     }
 }

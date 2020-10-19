@@ -61,11 +61,12 @@ class GamesDispatcher(
             }
             steam.matches(trimmedMessage) -> {
                 val region = guildsManager.getGuildRegion(guildId)
-                val games = steamGamesService.loadGames(listOf(region ?: "en"))[region] ?: return
+                val games = steamGamesService.loadGames(listOf(region ?: "en"))?.get(region) ?: return
                 showSteamGames(channelId, games)
             }
             gog.matches(trimmedMessage) -> {
-                val games = gogGamesService.loadGames()
+                val region = guildsManager.getGuildRegion(guildId)
+                val games = gogGamesService.loadGames(listOf(region ?: "en"))?.get(region) ?: return
                 showGogGames(channelId, games)
             }
         }
@@ -137,10 +138,10 @@ class GamesDispatcher(
         }
     }
 
-    suspend fun showSteamGames(channelId: String, elements: List<SteamGame>) {
+    suspend fun showSteamGames(channelId: String, elements: List<SteamGame>?) {
         val messageColor = Color(27, 40, 56)
-        if (elements.isEmpty()) {
-            postErrorMessage(channelId, "Игры не раздают", messageColor)
+        if (elements == null || elements.isEmpty()) {
+            postErrorMessage(channelId, "Не получилось со Stream\'ом", messageColor)
             return
         }
         client.rest.channel.createMessage(channelId) {
@@ -192,14 +193,13 @@ class GamesDispatcher(
                 elements.take(takeFirst).forEach {
                     field {
                         name = it.title
-                        value = if (it.isPriceVisible && it.price != null) {
+                        value = if (it.isPriceVisible && it.price != null && it.localPrice != null) {
                             buildString {
                                 append("[")
                                 if (it.price.isDiscounted) {
-                                    append("~~${it.price.baseAmount} ${it.price.symbol}~~ ")
+                                    append("~~${it.localPrice?.base}~~ ")
                                 }
-                                append(it.price.finalAmount)
-                                append(" ${it.price.symbol}")
+                                append(it.localPrice?.final)
                                 append("]")
                                 append("(${it.urlFormatted})")
                             }

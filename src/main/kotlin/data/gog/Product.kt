@@ -18,4 +18,11 @@ data class Product(
 
     val urlFormatted: String
         get() = "https://www.gog.com/$url"
+
+    var localPrice: LocalPrice? = null
+
+    data class LocalPrice(
+        val base: String,
+        val final: String,
+    )
 }

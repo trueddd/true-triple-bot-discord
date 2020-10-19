@@ -16,12 +16,12 @@ import java.time.LocalDateTime
 import java.time.temporal.ChronoUnit
 
 class MainBot(
-    guildsManager: GuildsManager,
-    epicGamesService: EpicGamesService,
-    steamGamesService: SteamGamesService,
-    gogGamesService: GogGamesService,
+    private val guildsManager: GuildsManager,
+    private val epicGamesService: EpicGamesService,
+    private val steamGamesService: SteamGamesService,
+    private val gogGamesService: GogGamesService,
     client: Kord
-) : BaseBot(guildsManager, epicGamesService, steamGamesService, client) {
+) : BaseBot(client) {
 
     private val moviesDispatcher = MoviesDispatcher(guildsManager, client)
 
@@ -102,10 +102,13 @@ class MainBot(
                     }
                     val guildsWithRegions = gamesGuildsAndChannels.map { it.first to (guildsManager.getGuildRegion(it.first) ?: "en") }
                     val steamGames = steamGamesService.loadGames(guildsWithRegions.map { it.second }.distinct())
+                    val gogGames = gogGamesService.loadGames(guildsWithRegions.map { it.second }.distinct())
                     gamesGuildsAndChannels.forEach { (guildId, channelId) ->
                         val region = guildsWithRegions.first { it.first == guildId }.second
-                        val games = steamGames[region] ?: return@forEach
-                        gamesDispatcher.showSteamGames(channelId, games)
+                        val steamGamesForRegion = steamGames?.get(region)
+                        val gogGamesForRegion = gogGames?.get(region)
+                        gamesDispatcher.showSteamGames(channelId, steamGamesForRegion)
+                        gamesDispatcher.showGogGames(channelId, gogGamesForRegion)
                     }
 
                     delay(Duration.ofHours(24).toMillis())
