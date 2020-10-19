@@ -21,6 +21,7 @@ object Commands {
         const val UNSET = "unset"
         const val EGS = "egs"
         const val STEAM = "steam"
+        const val GOG = "gog"
     }
     object Common {
         const val HELP = "help"

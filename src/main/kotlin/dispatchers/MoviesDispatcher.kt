@@ -1,13 +1,13 @@
-package services.dispatchers
+package dispatchers
 
-import GoogleService
+import services.GoogleService
 import com.gitlab.kordlib.common.entity.DiscordMessage
 import com.gitlab.kordlib.core.Kord
 import com.gitlab.kordlib.core.behavior.channel.MessageChannelBehavior
 import com.gitlab.kordlib.core.behavior.channel.createEmbed
 import com.gitlab.kordlib.core.event.message.MessageCreateEvent
 import com.gitlab.kordlib.core.event.message.ReactionAddEvent
-import data.Movie
+import data.movies.Movie
 import db.GuildsManager
 import utils.Commands
 import utils.commandRegex
@@ -85,8 +85,8 @@ class MoviesDispatcher(
             color = Color.MAGENTA
             title = movie?.name ?: movieName
             author {
-                icon = "https://yt3.ggpht.com/a/AATXAJz7FyhOdugVDwiazqdVf0P-xD1GOlkj-qdwD7cPtg=s900-c-k-c0xffffffff-no-rj-mo"
-                name = "Смотреть на Кинопоиске"
+                icon = "http://baskino.me/templates/Baskino/images/favicon.png"
+                name = "Смотреть на Baskino"
                 url = movieLink
             }
             movie?.image?.let { image = it }

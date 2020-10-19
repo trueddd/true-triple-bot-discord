@@ -1,13 +1,15 @@
-package services.dispatchers
+package dispatchers
 
 import com.gitlab.kordlib.core.Kord
 import com.gitlab.kordlib.core.behavior.channel.MessageChannelBehavior
 import com.gitlab.kordlib.core.behavior.channel.createEmbed
 import com.gitlab.kordlib.core.event.message.MessageCreateEvent
 import data.egs.GiveAwayGame
+import data.gog.Product
 import data.steam.SteamGame
 import db.GuildsManager
 import services.EpicGamesService
+import services.GogGamesService
 import services.SteamGamesService
 import utils.Commands
 import utils.commandRegex
@@ -20,6 +22,7 @@ class GamesDispatcher(
     private val guildsManager: GuildsManager,
     private val epicGamesService: EpicGamesService,
     private val steamGamesService: SteamGamesService,
+    private val gogGamesService: GogGamesService,
     client: Kord
 ) : BaseDispatcher(client), MessageCreateListener {
 
@@ -35,6 +38,7 @@ class GamesDispatcher(
     private val unset = Commands.Games.UNSET.commandRegex()
     private val egs = Commands.Games.EGS.commandRegex()
     private val steam = Commands.Games.STEAM.commandRegex()
+    private val gog = Commands.Games.GOG.commandRegex()
 
     override suspend fun onMessageCreate(event: MessageCreateEvent, trimmedMessage: String) {
         val guildId = event.message.getGuild().id.value
@@ -59,6 +63,10 @@ class GamesDispatcher(
                 val region = guildsManager.getGuildRegion(guildId)
                 val games = steamGamesService.loadGames(listOf(region ?: "en"))[region] ?: return
                 showSteamGames(channelId, games)
+            }
+            gog.matches(trimmedMessage) -> {
+                val games = gogGamesService.loadGames()
+                showGogGames(channelId, games)
             }
         }
     }
@@ -160,6 +168,51 @@ class GamesDispatcher(
                             "[Bundle ${it.price.discount}](${it.url})"
                         }
                         inline = true
+                    }
+                }
+            }
+        }
+    }
+
+    suspend fun showGogGames(channelId: String, elements: List<Product>?) {
+        val messageColor = Color(104, 0, 209)
+        if (elements == null || elements.isEmpty()) {
+            postErrorMessage(channelId, "Не получилось с GOG\'ом", messageColor)
+            return
+        }
+        client.rest.channel.createMessage(channelId) {
+            embed {
+                color = messageColor
+                author {
+                    icon = "https://dl2.macupdate.com/images/icons256/54428.png"
+                    name = "GOG"
+                    url = "https://www.gog.com/games?sort=popularity&page=1&tab=on_sale"
+                }
+                val takeFirst = 15
+                elements.take(takeFirst).forEach {
+                    field {
+                        name = it.title
+                        value = if (it.isPriceVisible && it.price != null) {
+                            buildString {
+                                append("[")
+                                if (it.price.isDiscounted) {
+                                    append("~~${it.price.baseAmount} ${it.price.symbol}~~ ")
+                                }
+                                append(it.price.finalAmount)
+                                append(" ${it.price.symbol}")
+                                append("]")
+                                append("(${it.urlFormatted})")
+                            }
+                        } else {
+                            "[${it.developer}](${it.urlFormatted})"
+                        }
+                        inline = true
+                    }
+                }
+                if (elements.count() - takeFirst > 0) {
+                    field {
+                        name = "More here :point_down:"
+                        value = "[click](https://www.gog.com/games?sort=popularity&page=1&tab=on_sale)"
                     }
                 }
             }

@@ -1,4 +1,4 @@
-package services.dispatchers
+package dispatchers
 
 import com.gitlab.kordlib.common.entity.DiscordChannel
 import com.gitlab.kordlib.common.entity.DiscordUser

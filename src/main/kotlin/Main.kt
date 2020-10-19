@@ -14,6 +14,7 @@ import kotlinx.coroutines.launch
 import org.slf4j.event.Level
 import services.BaseBot.Companion.BOT_PREFIX
 import services.EpicGamesService
+import services.GogGamesService
 import services.MainBot
 import services.SteamGamesService
 import utils.AppEnvironment
@@ -30,11 +31,12 @@ fun Application.module() {
     val guildsManager = GuildsManager(database)
     val epicGamesService = EpicGamesService(database)
     val steamGamesService = SteamGamesService(database)
+    val gogGamesService = GogGamesService(database)
 
     GlobalScope.launch {
         val client = Kord(AppEnvironment.getBotSecret())
 
-        val bot = MainBot(guildsManager, epicGamesService, steamGamesService, client)
+        val bot = MainBot(guildsManager, epicGamesService, steamGamesService, gogGamesService, client)
         bot.attach()
 
         client.login {

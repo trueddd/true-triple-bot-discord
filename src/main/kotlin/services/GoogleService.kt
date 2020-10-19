@@ -1,4 +1,6 @@
-import data.GoogleSearchResponse
+package services
+
+import data.movies.GoogleSearchResponse
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.okhttp.OkHttp
 import io.ktor.client.features.json.GsonSerializer

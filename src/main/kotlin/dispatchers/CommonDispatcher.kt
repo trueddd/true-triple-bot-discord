@@ -1,4 +1,4 @@
-package services.dispatchers
+package dispatchers
 
 import com.gitlab.kordlib.common.entity.Permission
 import com.gitlab.kordlib.core.Kord

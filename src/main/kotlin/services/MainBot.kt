@@ -10,7 +10,7 @@ import com.gitlab.kordlib.core.on
 import db.GuildsManager
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import services.dispatchers.*
+import dispatchers.*
 import java.time.Duration
 import java.time.LocalDateTime
 import java.time.temporal.ChronoUnit
@@ -19,12 +19,13 @@ class MainBot(
     guildsManager: GuildsManager,
     epicGamesService: EpicGamesService,
     steamGamesService: SteamGamesService,
+    gogGamesService: GogGamesService,
     client: Kord
 ) : BaseBot(guildsManager, epicGamesService, steamGamesService, client) {
 
     private val moviesDispatcher = MoviesDispatcher(guildsManager, client)
 
-    private val gamesDispatcher = GamesDispatcher(guildsManager, epicGamesService, steamGamesService, client)
+    private val gamesDispatcher = GamesDispatcher(guildsManager, epicGamesService, steamGamesService, gogGamesService, client)
 
     private val commonDispatcher = CommonDispatcher(guildsManager, client)
 

@@ -1,4 +1,4 @@
-package services.dispatchers
+package dispatchers
 
 import com.gitlab.kordlib.common.entity.Snowflake
 import com.gitlab.kordlib.core.Kord
