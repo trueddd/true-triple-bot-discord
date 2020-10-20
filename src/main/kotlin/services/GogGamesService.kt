@@ -22,7 +22,7 @@ class GogGamesService(database: Database) : BaseService(database) {
                     parameter("ids", response.products.joinToString(",") { it.id.toString() })
                 }
                 gamesWithRegions[code] = response.products.map { product ->
-                    product.apply {
+                    product.copy().apply {
                         val local = prices.embedded.items
                             .firstOrNull { i -> i.embedded.product.id == product.id }
                             ?.embedded?.prices?.let { code.primaryCurrencyPrices(it) } ?: return@apply

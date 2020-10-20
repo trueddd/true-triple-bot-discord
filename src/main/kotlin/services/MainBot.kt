@@ -76,23 +76,40 @@ class MainBot(
         }
 
         client.on<ReadyEvent> {
+            // schedule GOG notifications
             launch {
-                val startDelay = LocalDateTime.now()
-                    .withHour(18)
-                    .withMinute(0)
-                    .withSecond(0)
-                    .let {
-                        val temp = if (LocalDateTime.now().hour >= 18) {
-                            it.plusDays(1)
-                        } else {
-                            it
-                        }
-                        println("Next notify is scheduled on $it")
-                        return@let ChronoUnit.MILLIS.between(LocalDateTime.now(), temp).also { d ->
-                            println("Delay is $d")
-                        }
+                delay(countDelayTo(16, tag = "gog"))
+                do {
+                    val gamesGuildsAndChannels = guildsManager.getGamesChannelsIds()
+                    val guildsWithRegions = gamesGuildsAndChannels.map { it.first to (guildsManager.getGuildRegion(it.first) ?: "en") }
+                    val gogGames = gogGamesService.loadGames(guildsWithRegions.map { it.second }.distinct())
+                    gamesGuildsAndChannels.forEach { (guildId, channelId) ->
+                        val region = guildsWithRegions.first { it.first == guildId }.second
+                        val gogGamesForRegion = gogGames?.get(region)
+                        gamesDispatcher.showGogGames(channelId, gogGamesForRegion)
                     }
-                delay(startDelay)
+
+                    delay(Duration.ofHours(24).toMillis())
+                } while (true)
+            }
+            // schedule Steam notifications
+            launch {
+                delay(countDelayTo(17, tag = "steam"))
+                do {
+                    val gamesGuildsAndChannels = guildsManager.getGamesChannelsIds()
+                    val guildsWithRegions = gamesGuildsAndChannels.map { it.first to (guildsManager.getGuildRegion(it.first) ?: "en") }
+                    val steamGames = steamGamesService.loadGames(guildsWithRegions.map { it.second }.distinct())
+                    gamesGuildsAndChannels.forEach { (guildId, channelId) ->
+                        val region = guildsWithRegions.first { it.first == guildId }.second
+                        val steamGamesForRegion = steamGames?.get(region)
+                        gamesDispatcher.showSteamGames(channelId, steamGamesForRegion)
+                    }
+                    delay(Duration.ofHours(24).toMillis())
+                } while (true)
+            }
+            // schedule Epic Games Store notifications
+            launch {
+                delay(countDelayTo(18, tag = "egs"))
                 do {
                     val gamesGuildsAndChannels = guildsManager.getGamesChannelsIds()
                     epicGamesService.load().let { games ->
@@ -100,20 +117,27 @@ class MainBot(
                             gamesDispatcher.showEgsGames(it.second, games)
                         }
                     }
-                    val guildsWithRegions = gamesGuildsAndChannels.map { it.first to (guildsManager.getGuildRegion(it.first) ?: "en") }
-                    val steamGames = steamGamesService.loadGames(guildsWithRegions.map { it.second }.distinct())
-                    val gogGames = gogGamesService.loadGames(guildsWithRegions.map { it.second }.distinct())
-                    gamesGuildsAndChannels.forEach { (guildId, channelId) ->
-                        val region = guildsWithRegions.first { it.first == guildId }.second
-                        val steamGamesForRegion = steamGames?.get(region)
-                        val gogGamesForRegion = gogGames?.get(region)
-                        gamesDispatcher.showSteamGames(channelId, steamGamesForRegion)
-                        gamesDispatcher.showGogGames(channelId, gogGamesForRegion)
-                    }
-
                     delay(Duration.ofHours(24).toMillis())
                 } while (true)
             }
         }
+    }
+
+    private fun countDelayTo(hour: Int, minutes: Int = 0, tag: String = ""): Long {
+        return LocalDateTime.now()
+            .withHour(hour)
+            .withMinute(minutes)
+            .withSecond(0)
+            .let {
+                val temp = if (LocalDateTime.now().hour >= hour) {
+                    it.plusDays(1)
+                } else {
+                    it
+                }
+                println("Next notify is scheduled on $it ($tag)")
+                return@let ChronoUnit.MILLIS.between(LocalDateTime.now(), temp).also { d ->
+                    println("Delay is $d")
+                }
+            }
     }
 }
