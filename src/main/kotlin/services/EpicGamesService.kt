@@ -40,13 +40,15 @@ class EpicGamesService(database: Database) : BaseService(database) {
     }
 
     suspend fun load(forceRefresh: Boolean = false): List<GiveAwayGame> {
-        val cachedGames = if (forceRefresh) null else transaction(database) {
-            GiveAwayGames.selectAll().map { it.toGiveAwayGame() }.let { games ->
-                games.firstOrNull()?.lastUpdated?.let {
-                    if (ChronoUnit.HOURS.between(LocalDateTime.now(), it) < 3) games else null
-                }
-            }
-        }
+        val cachedGames: List<GiveAwayGame>? = null
+        // fixme: rework caching
+//        if (forceRefresh) null else transaction(database) {
+//            GiveAwayGames.selectAll().map { it.toGiveAwayGame() }.let { games ->
+//                games.firstOrNull()?.lastUpdated?.let {
+//                    if (ChronoUnit.HOURS.between(LocalDateTime.now(), it) < 3) games else null
+//                }
+//            }
+//        }
         return if (cachedGames == null) {
             val new = loadFromNetwork()
             transaction(database) {

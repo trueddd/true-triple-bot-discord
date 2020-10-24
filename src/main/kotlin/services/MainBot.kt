@@ -112,7 +112,7 @@ class MainBot(
                 delay(countDelayTo(18, tag = "egs"))
                 do {
                     val gamesGuildsAndChannels = guildsManager.getGamesChannelsIds()
-                    epicGamesService.load().let { games ->
+                    epicGamesService.load(forceRefresh = true).let { games ->
                         gamesGuildsAndChannels.forEach {
                             gamesDispatcher.showEgsGames(it.second, games)
                         }
