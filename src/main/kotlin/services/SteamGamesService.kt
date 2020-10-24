@@ -7,12 +7,12 @@ import io.ktor.client.request.*
 import org.jetbrains.exposed.sql.Database
 import org.jsoup.Jsoup
 
-class SteamGamesService(database: Database) : BaseService(database) {
+class SteamGamesService(database: Database) : BaseService<SteamGame>(database) {
 
     private val storeUrl = "https://store.steampowered.com/specials#p=0&tab=TopSellers"
     private val pricesUrl = "https://store.steampowered.com/api/appdetails/"
 
-    suspend fun loadGames(regions: List<String> = listOf("en")): Map<String, List<SteamGame>>? {
+    override suspend fun load(regions: List<String>): Map<String, List<SteamGame>>? {
         return try {
             val response = client.get<String>(storeUrl) {
                 header("Accept-Language", "ru-RU")

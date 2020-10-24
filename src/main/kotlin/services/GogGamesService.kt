@@ -7,12 +7,12 @@ import data.gog.prices.Price
 import io.ktor.client.request.*
 import org.jetbrains.exposed.sql.Database
 
-class GogGamesService(database: Database) : BaseService(database) {
+class GogGamesService(database: Database) : BaseService<Product>(database) {
 
     private val storeUrl = "https://www.gog.com/games/ajax/filtered?mediaType=game&page=1&price=discounted&sort=popularity"
     private val pricesUrl = "https://api.gog.com/products/prices"
 
-    suspend fun loadGames(regions: List<String> = listOf("en")): Map<String, List<Product>>? {
+    override suspend fun load(regions: List<String>): Map<String, List<Product>>? {
         return try {
             val response = client.get<GogOnSaleResponse>(storeUrl)
             val gamesWithRegions = mutableMapOf<String, List<Product>>()

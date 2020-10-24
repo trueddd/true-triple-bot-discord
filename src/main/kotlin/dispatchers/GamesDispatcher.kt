@@ -24,7 +24,9 @@ class GamesDispatcher(
     private val steamGamesService: SteamGamesService,
     private val gogGamesService: GogGamesService,
     client: Kord
-) : BaseDispatcher(client), MessageCreateListener {
+) : BaseDispatcher(client),
+    MessageCreateListener
+{
 
     override val dispatcherPrefix: String
         get() = "games"
@@ -56,17 +58,18 @@ class GamesDispatcher(
                 respondWithReaction(event.message, changed)
             }
             egs.matches(trimmedMessage) -> {
-                val games = epicGamesService.load()
+                val region = guildsManager.getGuildRegion(guildId)
+                val games = epicGamesService.load(listOf(region ?: "en"))?.get(region) ?: return
                 showEgsGames(channelId, games)
             }
             steam.matches(trimmedMessage) -> {
                 val region = guildsManager.getGuildRegion(guildId)
-                val games = steamGamesService.loadGames(listOf(region ?: "en"))?.get(region) ?: return
+                val games = steamGamesService.load(listOf(region ?: "en"))?.get(region) ?: return
                 showSteamGames(channelId, games)
             }
             gog.matches(trimmedMessage) -> {
                 val region = guildsManager.getGuildRegion(guildId)
-                val games = gogGamesService.loadGames(listOf(region ?: "en"))?.get(region) ?: return
+                val games = gogGamesService.load(listOf(region ?: "en"))?.get(region) ?: return
                 showGogGames(channelId, games)
             }
         }
@@ -107,9 +110,9 @@ class GamesDispatcher(
         }
     }
 
-    suspend fun showEgsGames(channelId: String, elements: List<GiveAwayGame>) {
+    suspend fun showEgsGames(channelId: String, elements: List<GiveAwayGame>?) {
         val messageColor = Color(12, 12, 12)
-        if (elements.isEmpty()) {
+        if (elements == null || elements.isEmpty()) {
             postErrorMessage(channelId, "Игры не раздают", messageColor)
             return
         }

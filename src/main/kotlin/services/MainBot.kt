@@ -82,7 +82,7 @@ class MainBot(
                 do {
                     val gamesGuildsAndChannels = guildsManager.getGamesChannelsIds()
                     val guildsWithRegions = gamesGuildsAndChannels.map { it.first to (guildsManager.getGuildRegion(it.first) ?: "en") }
-                    val gogGames = gogGamesService.loadGames(guildsWithRegions.map { it.second }.distinct())
+                    val gogGames = gogGamesService.load(guildsWithRegions.map { it.second }.distinct())
                     gamesGuildsAndChannels.forEach { (guildId, channelId) ->
                         val region = guildsWithRegions.first { it.first == guildId }.second
                         val gogGamesForRegion = gogGames?.get(region)
@@ -98,7 +98,7 @@ class MainBot(
                 do {
                     val gamesGuildsAndChannels = guildsManager.getGamesChannelsIds()
                     val guildsWithRegions = gamesGuildsAndChannels.map { it.first to (guildsManager.getGuildRegion(it.first) ?: "en") }
-                    val steamGames = steamGamesService.loadGames(guildsWithRegions.map { it.second }.distinct())
+                    val steamGames = steamGamesService.load(guildsWithRegions.map { it.second }.distinct())
                     gamesGuildsAndChannels.forEach { (guildId, channelId) ->
                         val region = guildsWithRegions.first { it.first == guildId }.second
                         val steamGamesForRegion = steamGames?.get(region)
@@ -112,10 +112,12 @@ class MainBot(
                 delay(countDelayTo(18, tag = "egs"))
                 do {
                     val gamesGuildsAndChannels = guildsManager.getGamesChannelsIds()
-                    epicGamesService.load(forceRefresh = true).let { games ->
-                        gamesGuildsAndChannels.forEach {
-                            gamesDispatcher.showEgsGames(it.second, games)
-                        }
+                    val guildsWithRegions = gamesGuildsAndChannels.map { it.first to (guildsManager.getGuildRegion(it.first) ?: "en") }
+                    val egsGames = epicGamesService.load(guildsWithRegions.map { it.second }.distinct())
+                    gamesGuildsAndChannels.forEach { (guildId, channelId) ->
+                        val region = guildsWithRegions.first { it.first == guildId }.second
+                        val egsGamesForRegion = egsGames?.get(region)
+                        gamesDispatcher.showEgsGames(channelId, egsGamesForRegion)
                     }
                     delay(Duration.ofHours(24).toMillis())
                 } while (true)
