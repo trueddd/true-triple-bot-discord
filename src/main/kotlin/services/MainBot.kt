@@ -11,6 +11,10 @@ import db.GuildsManager
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import dispatchers.*
+import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.take
+import kotlinx.coroutines.withTimeoutOrNull
+import utils.AppEnvironment
 import java.time.Duration
 import java.time.LocalDateTime
 import java.time.temporal.ChronoUnit
@@ -20,12 +24,13 @@ class MainBot(
     private val epicGamesService: EpicGamesService,
     private val steamGamesService: SteamGamesService,
     private val gogGamesService: GogGamesService,
+    private val crackedGamesService: CrackedGamesService,
     client: Kord
 ) : BaseBot(client) {
 
     private val moviesDispatcher = MoviesDispatcher(guildsManager, client)
 
-    private val gamesDispatcher = GamesDispatcher(guildsManager, epicGamesService, steamGamesService, gogGamesService, client)
+    private val gamesDispatcher = GamesDispatcher(guildsManager, epicGamesService, steamGamesService, gogGamesService, crackedGamesService, client)
 
     private val commonDispatcher = CommonDispatcher(guildsManager, client)
 
@@ -75,52 +80,71 @@ class MainBot(
             dispatcher.onMessageCreate(this, trimmedMessage)
         }
 
-        client.on<ReadyEvent> {
-            // schedule GOG notifications
-            launch {
-                delay(countDelayTo(16, tag = "gog"))
-                do {
-                    val gamesGuildsAndChannels = guildsManager.getGamesChannelsIds()
-                    val guildsWithRegions = gamesGuildsAndChannels.map { it.first to (guildsManager.getGuildRegion(it.first) ?: "en") }
-                    val gogGames = gogGamesService.load(guildsWithRegions.map { it.second }.distinct())
-                    gamesGuildsAndChannels.forEach { (guildId, channelId) ->
-                        val region = guildsWithRegions.first { it.first == guildId }.second
-                        val gogGamesForRegion = gogGames?.get(region)
-                        gamesDispatcher.showGogGames(channelId, gogGamesForRegion)
-                    }
+        if (AppEnvironment.isProdEnv()) {
+            client.on<ReadyEvent> {
+                // schedule cracked games notifications
+                launch {
+                    delay(countDelayTo(15, tag = "cracked"))
+                    do {
+                        val gamesGuildsAndChannels = guildsManager.getGamesChannelsIds()
+                        val crackedGames = crackedGamesService.loadFlow()
+                        withTimeoutOrNull(5000L) {
+                            crackedGames.take(1).collect {
+                                gamesGuildsAndChannels.forEach { (_, channelId) ->
+                                    gamesDispatcher.showCrackedGames(channelId, it)
+                                }
+                            }
+                        }
 
-                    delay(Duration.ofHours(24).toMillis())
-                } while (true)
-            }
-            // schedule Steam notifications
-            launch {
-                delay(countDelayTo(17, tag = "steam"))
-                do {
-                    val gamesGuildsAndChannels = guildsManager.getGamesChannelsIds()
-                    val guildsWithRegions = gamesGuildsAndChannels.map { it.first to (guildsManager.getGuildRegion(it.first) ?: "en") }
-                    val steamGames = steamGamesService.load(guildsWithRegions.map { it.second }.distinct())
-                    gamesGuildsAndChannels.forEach { (guildId, channelId) ->
-                        val region = guildsWithRegions.first { it.first == guildId }.second
-                        val steamGamesForRegion = steamGames?.get(region)
-                        gamesDispatcher.showSteamGames(channelId, steamGamesForRegion)
-                    }
-                    delay(Duration.ofHours(24).toMillis())
-                } while (true)
-            }
-            // schedule Epic Games Store notifications
-            launch {
-                delay(countDelayTo(18, tag = "egs"))
-                do {
-                    val gamesGuildsAndChannels = guildsManager.getGamesChannelsIds()
-                    val guildsWithRegions = gamesGuildsAndChannels.map { it.first to (guildsManager.getGuildRegion(it.first) ?: "en") }
-                    val egsGames = epicGamesService.load(guildsWithRegions.map { it.second }.distinct())
-                    gamesGuildsAndChannels.forEach { (guildId, channelId) ->
-                        val region = guildsWithRegions.first { it.first == guildId }.second
-                        val egsGamesForRegion = egsGames?.get(region)
-                        gamesDispatcher.showEgsGames(channelId, egsGamesForRegion)
-                    }
-                    delay(Duration.ofHours(24).toMillis())
-                } while (true)
+                        delay(Duration.ofHours(24).toMillis())
+                    } while (true)
+                }
+                // schedule GOG notifications
+                launch {
+                    delay(countDelayTo(16, tag = "gog"))
+                    do {
+                        val gamesGuildsAndChannels = guildsManager.getGamesChannelsIds()
+                        val guildsWithRegions = gamesGuildsAndChannels.map { it.first to (guildsManager.getGuildRegion(it.first) ?: "en") }
+                        val gogGames = gogGamesService.load(guildsWithRegions.map { it.second }.distinct())
+                        gamesGuildsAndChannels.forEach { (guildId, channelId) ->
+                            val region = guildsWithRegions.first { it.first == guildId }.second
+                            val gogGamesForRegion = gogGames?.get(region)
+                            gamesDispatcher.showGogGames(channelId, gogGamesForRegion)
+                        }
+
+                        delay(Duration.ofHours(24).toMillis())
+                    } while (true)
+                }
+                // schedule Steam notifications
+                launch {
+                    delay(countDelayTo(17, tag = "steam"))
+                    do {
+                        val gamesGuildsAndChannels = guildsManager.getGamesChannelsIds()
+                        val guildsWithRegions = gamesGuildsAndChannels.map { it.first to (guildsManager.getGuildRegion(it.first) ?: "en") }
+                        val steamGames = steamGamesService.load(guildsWithRegions.map { it.second }.distinct())
+                        gamesGuildsAndChannels.forEach { (guildId, channelId) ->
+                            val region = guildsWithRegions.first { it.first == guildId }.second
+                            val steamGamesForRegion = steamGames?.get(region)
+                            gamesDispatcher.showSteamGames(channelId, steamGamesForRegion)
+                        }
+                        delay(Duration.ofHours(24).toMillis())
+                    } while (true)
+                }
+                // schedule Epic Games Store notifications
+                launch {
+                    delay(countDelayTo(18, tag = "egs"))
+                    do {
+                        val gamesGuildsAndChannels = guildsManager.getGamesChannelsIds()
+                        val guildsWithRegions = gamesGuildsAndChannels.map { it.first to (guildsManager.getGuildRegion(it.first) ?: "en") }
+                        val egsGames = epicGamesService.load(guildsWithRegions.map { it.second }.distinct())
+                        gamesGuildsAndChannels.forEach { (guildId, channelId) ->
+                            val region = guildsWithRegions.first { it.first == guildId }.second
+                            val egsGamesForRegion = egsGames?.get(region)
+                            gamesDispatcher.showEgsGames(channelId, egsGamesForRegion)
+                        }
+                        delay(Duration.ofHours(24).toMillis())
+                    } while (true)
+                }
             }
         }
     }

@@ -12,11 +12,8 @@ import io.ktor.server.netty.Netty
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import org.slf4j.event.Level
+import services.*
 import services.BaseBot.Companion.BOT_PREFIX
-import services.EpicGamesService
-import services.GogGamesService
-import services.MainBot
-import services.SteamGamesService
 import utils.AppEnvironment
 import utils.Commands
 import utils.provideDatabase
@@ -32,11 +29,12 @@ fun Application.module() {
     val epicGamesService = EpicGamesService(database)
     val steamGamesService = SteamGamesService(database)
     val gogGamesService = GogGamesService(database)
+    val crackedGamesService = CrackedGamesService(database)
 
     GlobalScope.launch {
         val client = Kord(AppEnvironment.getBotSecret())
 
-        val bot = MainBot(guildsManager, epicGamesService, steamGamesService, gogGamesService, client)
+        val bot = MainBot(guildsManager, epicGamesService, steamGamesService, gogGamesService, crackedGamesService, client)
         bot.attach()
 
         client.login {

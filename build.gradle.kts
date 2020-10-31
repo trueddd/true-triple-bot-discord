@@ -21,18 +21,22 @@ repositories {
 }
 
 dependencies {
-    val ktorVersion = "1.4.0"
+    val ktorVersion = "1.4.1"
     val kotlinVersion = "1.4.0"
     val logbackVersion = "1.2.3"
     val postgresDriverVersion = "42.2.2"
     val exposedVersion = "0.27.1"
 
-    implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlinVersion")
-    implementation("io.ktor:ktor-server-netty:$ktorVersion")
     implementation("ch.qos.logback:logback-classic:$logbackVersion")
+    implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlinVersion")
     implementation("io.ktor:ktor-server-core:$ktorVersion")
+    implementation("io.ktor:ktor-server-netty:$ktorVersion")
+    implementation("io.ktor:ktor-websockets:$ktorVersion")
     implementation("io.ktor:ktor-gson:$ktorVersion")
 
+    implementation("io.ktor:ktor-client-core:$ktorVersion")
+    implementation("io.ktor:ktor-client-cio:$ktorVersion")
+    implementation("io.ktor:ktor-client-websockets:$ktorVersion")
     implementation("io.ktor:ktor-client-okhttp:$ktorVersion")
     implementation("io.ktor:ktor-client-json:$ktorVersion")
     implementation("io.ktor:ktor-client-gson:$ktorVersion")

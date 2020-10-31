@@ -4,10 +4,16 @@ import com.gitlab.kordlib.core.Kord
 import com.gitlab.kordlib.core.behavior.channel.MessageChannelBehavior
 import com.gitlab.kordlib.core.behavior.channel.createEmbed
 import com.gitlab.kordlib.core.event.message.MessageCreateEvent
+import data.cracked.Game
 import data.egs.GiveAwayGame
 import data.gog.Product
 import data.steam.SteamGame
 import db.GuildsManager
+import io.ktor.util.*
+import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.take
+import kotlinx.coroutines.withTimeoutOrNull
+import services.CrackedGamesService
 import services.EpicGamesService
 import services.GogGamesService
 import services.SteamGamesService
@@ -23,6 +29,7 @@ class GamesDispatcher(
     private val epicGamesService: EpicGamesService,
     private val steamGamesService: SteamGamesService,
     private val gogGamesService: GogGamesService,
+    private val crackedGamesService: CrackedGamesService,
     client: Kord
 ) : BaseDispatcher(client),
     MessageCreateListener
@@ -41,6 +48,7 @@ class GamesDispatcher(
     private val egs = Commands.Games.EGS.commandRegex()
     private val steam = Commands.Games.STEAM.commandRegex()
     private val gog = Commands.Games.GOG.commandRegex()
+    private val cracked = Commands.Games.CRACKED.commandRegex()
 
     override suspend fun onMessageCreate(event: MessageCreateEvent, trimmedMessage: String) {
         val guildId = event.message.getGuild().id.value
@@ -71,6 +79,14 @@ class GamesDispatcher(
                 val region = guildsManager.getGuildRegion(guildId)
                 val games = gogGamesService.load(listOf(region ?: "en"))?.get(region) ?: return
                 showGogGames(channelId, games)
+            }
+            cracked.matches(trimmedMessage) -> {
+                val cracked = crackedGamesService.loadFlow()
+                withTimeoutOrNull(5000L) {
+                    cracked.take(1).collect {
+                        showCrackedGames(channelId, it)
+                    }
+                }
             }
         }
     }
@@ -222,6 +238,42 @@ class GamesDispatcher(
                         name = "More here :point_down:"
                         value = "[click](https://www.gog.com/games?sort=popularity&page=1&tab=on_sale)"
                     }
+                }
+            }
+        }
+    }
+
+    suspend fun showCrackedGames(channelId: String, elements: List<Game>?) {
+        val messageColor = Color(237, 28, 35)
+        if (elements == null || elements.isEmpty()) {
+            postErrorMessage(channelId, "Не получилось с кряками", messageColor)
+            return
+        }
+        client.rest.channel.createMessage(channelId) {
+            embed {
+                color = messageColor
+                author {
+                    icon = "https://img7.androidappsapk.co/OurDjLyAKt2YTXvtMPQfHkQd07NmdEOpAwfqy1_cy9pxG3CX6vOu88mVh20TJa30ZdQ=s300"
+                    name = "Последние взломанные игры"
+                    url = "https://crackwatch.com/games"
+                }
+                val takeFirst = 15
+                elements.take(takeFirst).forEach {
+                    field {
+                        name = it.title
+                        value = buildString {
+                            append("[")
+                            append("Взломано ")
+                            append(it.crackDate.toLocalDateTime().format())
+                            append("]")
+                            append("(https://crackwatch.com/game/${it.slug})")
+                        }
+                        inline = true
+                    }
+                }
+                footer {
+                    icon = "https://img7.androidappsapk.co/OurDjLyAKt2YTXvtMPQfHkQd07NmdEOpAwfqy1_cy9pxG3CX6vOu88mVh20TJa30ZdQ=s300"
+                    text = "Powered by CrackWatch"
                 }
             }
         }

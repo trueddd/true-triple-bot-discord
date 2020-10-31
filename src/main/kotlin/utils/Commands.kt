@@ -22,6 +22,7 @@ object Commands {
         const val EGS = "egs"
         const val STEAM = "steam"
         const val GOG = "gog"
+        const val CRACKED = "cracked"
     }
     object Common {
         const val HELP = "help"
