@@ -257,14 +257,16 @@ class GamesDispatcher(
                     name = "Последние взломанные игры"
                     url = "https://crackwatch.com/games"
                 }
-                val takeFirst = 15
+                val today = Date().days()
+                val todayCracks = elements.count { it.crackDate.days() == today }
+                val takeFirst = todayCracks + (if (9 - todayCracks <= 0) 0 else 9 - todayCracks)
                 elements.take(takeFirst).forEach {
                     field {
                         name = it.title
                         value = buildString {
                             append("[")
                             append("Взломано ")
-                            append(it.crackDate.toLocalDateTime().format())
+                            append(it.crackDate.formatContext())
                             append("]")
                             append("(https://crackwatch.com/game/${it.slug})")
                         }
@@ -287,5 +289,18 @@ class GamesDispatcher(
             e.printStackTrace()
             null
         }
+    }
+
+    private fun Date.formatContext(pattern: String = "d MMMM", locale: Locale = Locale("ru")): String? {
+        val todayDays = Date().days()
+        return when (this.days()) {
+            todayDays -> "сегодня"
+            todayDays - 1 -> "вчера"
+            else -> this.toLocalDateTime().format(pattern, locale)
+        }
+    }
+
+    private fun Date.days(): Long {
+        return this.time / 86_400_000
     }
 }
