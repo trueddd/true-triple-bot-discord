@@ -11,6 +11,7 @@ import data.movies.Movie
 import db.GuildsManager
 import utils.Commands
 import utils.commandRegex
+import utils.isSentByAdmin
 import utils.setDefaultStatus
 import java.awt.Color
 import java.text.SimpleDateFormat
@@ -155,18 +156,34 @@ class MoviesDispatcher(
                 showHelp(event.message.channel, guildsManager.getMoviesListChannel(guildId))
             }
             trimmedMessage.matches(set) -> {
+                if (!event.isSentByAdmin()) {
+                    respondWithReaction(event.message, false)
+                    return
+                }
                 val changed = guildsManager.setMoviesListChannel(guildId, channelId)
                 respondWithReaction(event.message, changed)
             }
             trimmedMessage.matches(unset) -> {
+                if (!event.isSentByAdmin()) {
+                    respondWithReaction(event.message, false)
+                    return
+                }
                 val changed = guildsManager.setMoviesListChannel(guildId, null)
                 respondWithReaction(event.message, changed)
             }
             trimmedMessage.matches(watchedSet) -> {
+                if (!event.isSentByAdmin()) {
+                    respondWithReaction(event.message, false)
+                    return
+                }
                 val changed = guildsManager.setWatchedMoviesListChannel(guildId, channelId)
                 respondWithReaction(event.message, changed)
             }
             trimmedMessage.matches(watchedUnset) -> {
+                if (!event.isSentByAdmin()) {
+                    respondWithReaction(event.message, false)
+                    return
+                }
                 val changed = guildsManager.setWatchedMoviesListChannel(guildId, null)
                 respondWithReaction(event.message, changed)
             }
@@ -178,14 +195,26 @@ class MoviesDispatcher(
                 searchForMovie(event.message.channel, trimmedMessage.removePrefix("search").trim())
             }
             trimmedMessage.matches(notifySet) -> {
+                if (!event.isSentByAdmin()) {
+                    respondWithReaction(event.message, false)
+                    return
+                }
                 val changed = guildsManager.setMoviesNotifyChannel(guildId, channelId)
                 respondWithReaction(event.message, changed)
             }
             trimmedMessage.matches(notifyUnset) -> {
+                if (!event.isSentByAdmin()) {
+                    respondWithReaction(event.message, false)
+                    return
+                }
                 val changed = guildsManager.setMoviesNotifyChannel(guildId, null)
                 respondWithReaction(event.message, changed)
             }
             trimmedMessage.matches(roleSet) -> {
+                if (!event.isSentByAdmin()) {
+                    respondWithReaction(event.message, false)
+                    return
+                }
                 val roleId = trimmedMessage
                     .removePrefix(Commands.Movies.ROLE_SET)
                     .trim()
@@ -202,6 +231,10 @@ class MoviesDispatcher(
                 respondWithReaction(event.message, changed)
             }
             trimmedMessage.matches(roleUnset) -> {
+                if (!event.isSentByAdmin()) {
+                    respondWithReaction(event.message, false)
+                    return
+                }
                 val changed = guildsManager.setMoviesRoleId(guildId, null)
                 respondWithReaction(event.message, changed)
             }

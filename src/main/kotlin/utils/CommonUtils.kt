@@ -1,8 +1,10 @@
 package utils
 
+import com.gitlab.kordlib.common.entity.Permission
 import com.gitlab.kordlib.core.Kord
 import com.gitlab.kordlib.core.behavior.channel.MessageChannelBehavior
 import com.gitlab.kordlib.core.behavior.channel.createMessage
+import com.gitlab.kordlib.core.event.message.MessageCreateEvent
 import services.BaseBot
 import java.awt.Color
 import java.text.SimpleDateFormat
@@ -44,4 +46,9 @@ fun String.replaceIfMatches(regex: Regex, replacement: String): String? {
     } else {
         null
     }
+}
+
+suspend fun MessageCreateEvent.isSentByAdmin(): Boolean {
+    val guild = guildId ?: return false
+    return message.author?.asMember(guild)?.getPermissions()?.contains(Permission.Administrator) == true
 }

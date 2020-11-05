@@ -10,6 +10,7 @@ import db.GuildsManager
 import services.BaseBot
 import utils.Commands
 import utils.commandRegex
+import utils.isSentByAdmin
 import utils.replaceIfMatches
 import java.awt.Color
 
@@ -39,18 +40,23 @@ class CommonDispatcher(
                 pickRandom(trimmedMessage.removePrefix(Commands.Common.PICK).trim(), event.message)
             }
             locale.matches(trimmedMessage) -> {
+                if (!event.isSentByAdmin()) {
+                    respondWithReaction(event.message, false)
+                    return
+                }
                 setLocale(trimmedMessage.removePrefix(Commands.Common.LOCALE).trim(), event.message)
             }
             roleSet.matches(trimmedMessage) -> {
-                val guildId = event.guildId ?: return
-                if (event.message.author?.asMember(guildId)?.getPermissions()?.contains(Permission.Administrator) != true) {
+                if (event.isSentByAdmin()) {
+                    respondWithReaction(event.message, false)
                     return
                 }
                 val role = trimmedMessage.replaceIfMatches(roleSet, "$1")
                 val emoji = trimmedMessage.replaceIfMatches(roleSet, "$2")
-                if (role != null && emoji != null) {
+                val success = if (role != null && emoji != null) {
                     guildsManager.setRoleGetterEmoji(event.message.id.value, role, emoji)
-                }
+                } else false
+                respondWithReaction(event.message, success)
             }
         }
     }

@@ -19,6 +19,7 @@ import services.GogGamesService
 import services.SteamGamesService
 import utils.Commands
 import utils.commandRegex
+import utils.isSentByAdmin
 import java.awt.Color
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
@@ -58,10 +59,18 @@ class GamesDispatcher(
                 showHelp(event.message.channel)
             }
             set.matches(trimmedMessage) -> {
+                if (!event.isSentByAdmin()) {
+                    respondWithReaction(event.message, false)
+                    return
+                }
                 val changed = guildsManager.setGamesChannel(guildId, channelId)
                 respondWithReaction(event.message, changed)
             }
             unset.matches(trimmedMessage) -> {
+                if (!event.isSentByAdmin()) {
+                    respondWithReaction(event.message, false)
+                    return
+                }
                 val changed = guildsManager.setGamesChannel(guildId, null)
                 respondWithReaction(event.message, changed)
             }
