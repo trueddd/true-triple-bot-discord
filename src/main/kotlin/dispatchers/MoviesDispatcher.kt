@@ -278,12 +278,12 @@ class MoviesDispatcher(
             }
             field {
                 name = getCommand(Commands.Movies.SEARCH)
-                value = "Ищет фильм на Кинопоиске. Пример использования: `${getCommand(Commands.Movies.SEARCH, format = false)} Геи-ниггеры из далёкого космоса`."
+                value = "Ищет фильм на Baskino. Пример использования: `${getCommand(Commands.Movies.SEARCH, format = false)} Мстители`."
                 inline = true
             }
             field {
                 name = getCommand(Commands.Movies.ROLL)
-                value = "Выбирает случайный фильм из выборки, которую можно посмотреть по комманде ${getCommand(Commands.Movies.TOP)}. Если ввести параметр `-s`, бот найдёт выбранный фильм на Кинопоиске."
+                value = "Выбирает случайный фильм из выборки, которую можно посмотреть по комманде ${getCommand(Commands.Movies.TOP)}. Если ввести параметр `-s`, бот найдёт выбранный фильм на Baskino."
                 inline = true
             }
             field {

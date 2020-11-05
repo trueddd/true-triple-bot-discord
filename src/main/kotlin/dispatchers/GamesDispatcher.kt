@@ -123,6 +123,11 @@ class GamesDispatcher(
                 value = "Показывает список игр из магазина GOG со вкладки *Со скидкой*."
                 inline = true
             }
+            field {
+                name = getCommand(Commands.Games.CRACKED)
+                value = "Показывает список недавно взломанных игр с портала CrackWatch."
+                inline = true
+            }
         }
     }
 
