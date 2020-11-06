@@ -11,9 +11,6 @@ import db.GuildsManager
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import dispatchers.*
-import kotlinx.coroutines.flow.collect
-import kotlinx.coroutines.flow.take
-import kotlinx.coroutines.withTimeoutOrNull
 import utils.AppEnvironment
 import java.time.Duration
 import java.time.LocalDateTime
@@ -87,13 +84,9 @@ class MainBot(
                     delay(countDelayTo(15, tag = "cracked"))
                     do {
                         val gamesGuildsAndChannels = guildsManager.getGamesChannelsIds()
-                        val crackedGames = crackedGamesService.loadFlow()
-                        withTimeoutOrNull(5000L) {
-                            crackedGames.take(1).collect {
-                                gamesGuildsAndChannels.forEach { (_, channelId) ->
-                                    gamesDispatcher.showCrackedGames(channelId, it)
-                                }
-                            }
+                        val crackedGames = crackedGamesService.load()
+                        gamesGuildsAndChannels.forEach { (_, channelId) ->
+                            gamesDispatcher.showCrackedGames(channelId, crackedGames?.get("en"))
                         }
 
                         delay(Duration.ofHours(24).toMillis())

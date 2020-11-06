@@ -10,9 +10,6 @@ import data.gog.Product
 import data.steam.SteamGame
 import db.GuildsManager
 import io.ktor.util.*
-import kotlinx.coroutines.flow.collect
-import kotlinx.coroutines.flow.take
-import kotlinx.coroutines.withTimeoutOrNull
 import services.CrackedGamesService
 import services.EpicGamesService
 import services.GogGamesService
@@ -90,12 +87,8 @@ class GamesDispatcher(
                 showGogGames(channelId, games)
             }
             cracked.matches(trimmedMessage) -> {
-                val cracked = crackedGamesService.loadFlow()
-                withTimeoutOrNull(5000L) {
-                    cracked.take(1).collect {
-                        showCrackedGames(channelId, it)
-                    }
-                }
+                val cracked = crackedGamesService.load()
+                showCrackedGames(channelId, cracked?.get("en"))
             }
         }
     }
