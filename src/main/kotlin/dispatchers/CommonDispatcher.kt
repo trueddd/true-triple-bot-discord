@@ -1,6 +1,5 @@
 package dispatchers
 
-import com.gitlab.kordlib.common.entity.Permission
 import com.gitlab.kordlib.core.Kord
 import com.gitlab.kordlib.core.behavior.channel.MessageChannelBehavior
 import com.gitlab.kordlib.core.behavior.channel.createEmbed
@@ -47,7 +46,7 @@ class CommonDispatcher(
                 setLocale(trimmedMessage.removePrefix(Commands.Common.LOCALE).trim(), event.message)
             }
             roleSet.matches(trimmedMessage) -> {
-                if (event.isSentByAdmin()) {
+                if (!event.isSentByAdmin()) {
                     respondWithReaction(event.message, false)
                     return
                 }
