@@ -93,21 +93,22 @@ class MainBot(
                     } while (true)
                 }
                 // schedule GOG notifications
-                launch {
-                    delay(countDelayTo(16, tag = "gog"))
-                    do {
-                        val gamesGuildsAndChannels = guildsManager.getGamesChannelsIds()
-                        val guildsWithRegions = gamesGuildsAndChannels.map { it.first to (guildsManager.getGuildRegion(it.first) ?: "en") }
-                        val gogGames = gogGamesService.load(guildsWithRegions.map { it.second }.distinct())
-                        gamesGuildsAndChannels.forEach { (guildId, channelId) ->
-                            val region = guildsWithRegions.first { it.first == guildId }.second
-                            val gogGamesForRegion = gogGames?.get(region)
-                            gamesDispatcher.showGogGames(channelId, gogGamesForRegion)
-                        }
-
-                        delay(Duration.ofHours(24).toMillis())
-                    } while (true)
-                }
+                // FIXME: disabled until fixed
+//                launch {
+//                    delay(countDelayTo(16, tag = "gog"))
+//                    do {
+//                        val gamesGuildsAndChannels = guildsManager.getGamesChannelsIds()
+//                        val guildsWithRegions = gamesGuildsAndChannels.map { it.first to (guildsManager.getGuildRegion(it.first) ?: "en") }
+//                        val gogGames = gogGamesService.load(guildsWithRegions.map { it.second }.distinct())
+//                        gamesGuildsAndChannels.forEach { (guildId, channelId) ->
+//                            val region = guildsWithRegions.first { it.first == guildId }.second
+//                            val gogGamesForRegion = gogGames?.get(region)
+//                            gamesDispatcher.showGogGames(channelId, gogGamesForRegion)
+//                        }
+//
+//                        delay(Duration.ofHours(24).toMillis())
+//                    } while (true)
+//                }
                 // schedule Steam notifications
                 launch {
                     delay(countDelayTo(17, tag = "steam"))
