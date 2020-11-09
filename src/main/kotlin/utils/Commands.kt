@@ -30,4 +30,7 @@ object Commands {
         const val LOCALE = "locale"
         const val ROLE_GETTER = "role-get"
     }
+    object Minecraft {
+        const val SET = "set"
+    }
 }

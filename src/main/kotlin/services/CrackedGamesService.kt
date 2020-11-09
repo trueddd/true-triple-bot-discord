@@ -4,7 +4,7 @@ import data.cracked.Game
 import io.ktor.client.request.*
 import org.jetbrains.exposed.sql.Database
 
-class CrackedGamesService(database: Database) : BaseService<Game>(database) {
+class CrackedGamesService(database: Database) : BaseGamesService<Game>(database) {
 
     private val baseUrl = "https://api.crackwatch.com/api/games"
 

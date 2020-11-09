@@ -5,7 +5,7 @@ import io.ktor.client.engine.okhttp.*
 import io.ktor.client.features.json.*
 import org.jetbrains.exposed.sql.Database
 
-abstract class BaseService<T>(
+abstract class BaseService(
     protected val database: Database
 ) {
 
@@ -16,6 +16,4 @@ abstract class BaseService<T>(
             }
         }
     }
-
-    abstract suspend fun load(regions: List<String> = listOf("en")): Map<String, List<T>>?
 }

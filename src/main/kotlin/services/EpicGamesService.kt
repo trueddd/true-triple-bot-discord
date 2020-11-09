@@ -8,7 +8,7 @@ import org.jetbrains.exposed.sql.transactions.transaction
 import utils.egsDate
 import java.time.LocalDateTime
 
-class EpicGamesService(database: Database) : BaseService<GiveAwayGame>(database) {
+class EpicGamesService(database: Database) : BaseGamesService<GiveAwayGame>(database) {
 
     private val baseUrl = "https://store-site-backend-static.ak.epicgames.com/freeGamesPromotions?locale=en-US"
 

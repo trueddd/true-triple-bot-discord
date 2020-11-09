@@ -7,7 +7,7 @@ import data.gog.prices.Price
 import io.ktor.client.request.*
 import org.jetbrains.exposed.sql.Database
 
-class GogGamesService(database: Database) : BaseService<Product>(database) {
+class GogGamesService(database: Database) : BaseGamesService<Product>(database) {
 
     private val storeUrl = "https://www.gog.com/games/ajax/filtered?mediaType=game&page=1&price=discounted&sort=popularity"
     private val pricesUrl = "https://api.gog.com/products/prices"
