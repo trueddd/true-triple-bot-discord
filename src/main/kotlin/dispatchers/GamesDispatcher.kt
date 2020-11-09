@@ -10,10 +10,7 @@ import data.gog.Product
 import data.steam.SteamGame
 import db.GuildsManager
 import io.ktor.util.*
-import services.CrackedGamesService
-import services.EpicGamesService
-import services.GogGamesService
-import services.SteamGamesService
+import services.*
 import utils.Commands
 import utils.commandRegex
 import utils.isSentByAdmin
@@ -73,8 +70,14 @@ class GamesDispatcher(
             }
             egs.matches(trimmedMessage) -> {
                 val region = guildsManager.getGuildRegion(guildId)
-                val games = epicGamesService.load(listOf(region ?: "en"))?.get(region) ?: return
-                showEgsGames(channelId, games)
+                when (val games = epicGamesService.loadResponse(listOf(region ?: "en"))) {
+                    is ServiceResponse.Success -> showEgsGames(channelId, games.data.get(region))
+                    is ServiceResponse.Error -> {
+                        respondWithReaction(event.message, false)
+                        println("EGS load error")
+                        games.cause?.printStackTrace()
+                    }
+                }
             }
             steam.matches(trimmedMessage) -> {
                 val region = guildsManager.getGuildRegion(guildId)

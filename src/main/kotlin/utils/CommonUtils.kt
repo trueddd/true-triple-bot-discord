@@ -5,6 +5,9 @@ import com.gitlab.kordlib.core.Kord
 import com.gitlab.kordlib.core.behavior.channel.MessageChannelBehavior
 import com.gitlab.kordlib.core.behavior.channel.createMessage
 import com.gitlab.kordlib.core.event.message.MessageCreateEvent
+import io.ktor.client.*
+import io.ktor.client.request.*
+import io.ktor.http.*
 import services.BaseBot
 import java.awt.Color
 import java.text.SimpleDateFormat
@@ -51,4 +54,13 @@ fun String.replaceIfMatches(regex: Regex, replacement: String): String? {
 suspend fun MessageCreateEvent.isSentByAdmin(): Boolean {
     val guild = guildId ?: return false
     return message.author?.asMember(guild)?.getPermissions()?.contains(Permission.Administrator) == true
+}
+
+suspend inline fun <reified T> HttpClient.safeGet(urlString: String, block: HttpRequestBuilder.() -> Unit = {}): T? {
+    return try {
+        get(urlString, block)
+    } catch (e: Exception) {
+        e.printStackTrace()
+        null
+    }
 }
