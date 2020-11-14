@@ -62,11 +62,10 @@ class MinecraftDispatcher(
         client.rest.channel.createMessage(channelId) {
             embed {
                 color = messageColor
-                if (statusResponse.online) {
-                    title = "Сервер Online \uD83D\uDFE2"
-                    description = "Кубоёбов на сервере: ${statusResponse.players?.count ?: 0}"
+                title = if (statusResponse.online) {
+                    "Сервер Online \uD83D\uDFE2"
                 } else {
-                    title = "Сервер Offline \uD83D\uDD34"
+                    "Сервер Offline \uD83D\uDD34"
                 }
                 statusResponse.dns?.ip?.let {
                     field {
@@ -81,9 +80,11 @@ class MinecraftDispatcher(
                 }
                 statusResponse.players?.list?.let { players ->
                     field {
-                        name = "Кубоёбы онлайн"
+                        name = "Кубоёбы онлайн (${players.size})"
                         value = players.joinToString(", ") { it.name }
                     }
+                } ?: run {
+                    description = "Кубоёбов на сервере нет"
                 }
             }
         }
