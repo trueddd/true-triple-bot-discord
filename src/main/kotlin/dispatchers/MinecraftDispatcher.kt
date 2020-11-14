@@ -68,10 +68,21 @@ class MinecraftDispatcher(
                 } else {
                     title = "Сервер Offline \uD83D\uDD34"
                 }
-                statusResponse.hostname?.let {
+                statusResponse.dns?.ip?.let {
                     field {
                         name = "Адрес сервера"
-                        value = "${statusResponse.hostname}"
+                        value = it
+                    }
+                } ?: statusResponse.query?.let {
+                    field {
+                        name = "Адрес сервера"
+                        value = it
+                    }
+                }
+                statusResponse.players?.list?.let { players ->
+                    field {
+                        name = "Кубоёбы онлайн"
+                        value = players.joinToString(", ") { it.name }
                     }
                 }
             }

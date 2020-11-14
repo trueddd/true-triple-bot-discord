@@ -6,5 +6,6 @@ data class Players(
     @SerializedName("online")
     val count: Int,
     val max: Int,
-    val list: List<String>?,
+    @SerializedName("sample")
+    val list: List<Player>?,
 )

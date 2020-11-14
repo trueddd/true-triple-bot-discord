@@ -6,7 +6,7 @@ import org.jetbrains.exposed.sql.Database
 
 class MinecraftService(database: Database) : BaseService(database) {
 
-    private val baseUrl = "https://api.mcsrvstat.us/2/"
+    private val baseUrl = "https://eu.mc-api.net/v3/server/ping/"
 
     suspend fun load(serverIp: String): StatusResponse? {
         return try {
