@@ -94,7 +94,7 @@ class GuildsManager(
                 val id = it.getOrNull(Guilds.id) ?: return@mapNotNull null
                 val channelId = it.getOrNull(Guilds.gamesChannelId) ?: return@mapNotNull null
                 val region = it.getOrNull(Guilds.region)
-                GameChannel(id, channelId, region ?: "en")
+                GameChannel(id, channelId, region ?: "ru")
             }
         }
     }

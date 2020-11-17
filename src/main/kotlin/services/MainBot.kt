@@ -91,7 +91,7 @@ class MainBot(
                         val gamesGuildsAndChannels = guildsManager.getGamesChannelsIds()
                         val crackedGames = crackedGamesService.load()
                         gamesGuildsAndChannels.forEach { (_, channelId, _) ->
-                            gamesDispatcher.showCrackedGames(channelId, crackedGames?.get("en"))
+                            gamesDispatcher.showCrackedGames(channelId, crackedGames?.values?.firstOrNull())
                         }
 
                         delay(Duration.ofHours(24).toMillis())
