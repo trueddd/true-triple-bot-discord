@@ -22,7 +22,7 @@ class MainBot(
     private val steamGamesService: SteamGamesService,
     private val gogGamesService: GogGamesService,
     private val crackedGamesService: CrackedGamesService,
-    private val minecraftService: MinecraftService,
+    minecraftService: MinecraftService,
     client: Kord
 ) : BaseBot(client) {
 
@@ -90,7 +90,7 @@ class MainBot(
                     do {
                         val gamesGuildsAndChannels = guildsManager.getGamesChannelsIds()
                         val crackedGames = crackedGamesService.load()
-                        gamesGuildsAndChannels.forEach { (_, channelId) ->
+                        gamesGuildsAndChannels.forEach { (_, channelId, _) ->
                             gamesDispatcher.showCrackedGames(channelId, crackedGames?.get("en"))
                         }
 
@@ -98,33 +98,28 @@ class MainBot(
                     } while (true)
                 }
                 // schedule GOG notifications
-                // FIXME: disabled until fixed
-//                launch {
-//                    delay(countDelayTo(16, tag = "gog"))
-//                    do {
-//                        val gamesGuildsAndChannels = guildsManager.getGamesChannelsIds()
-//                        val guildsWithRegions = gamesGuildsAndChannels.map { it.first to (guildsManager.getGuildRegion(it.first) ?: "en") }
-//                        val gogGames = gogGamesService.load(guildsWithRegions.map { it.second }.distinct())
-//                        gamesGuildsAndChannels.forEach { (guildId, channelId) ->
-//                            val region = guildsWithRegions.first { it.first == guildId }.second
-//                            val gogGamesForRegion = gogGames?.get(region)
-//                            gamesDispatcher.showGogGames(channelId, gogGamesForRegion)
-//                        }
-//
-//                        delay(Duration.ofHours(24).toMillis())
-//                    } while (true)
-//                }
+                launch {
+                    delay(countDelayTo(16, tag = "gog"))
+                    do {
+                        val gamesGuildsAndChannels = guildsManager.getGamesChannelsIds()
+                        val gogGames = gogGamesService.load(gamesGuildsAndChannels.map { it.region }.distinct())
+                        gamesGuildsAndChannels.forEach {
+                            val gogGamesForRegion = gogGames?.get(it.region)
+                            gamesDispatcher.showGogGames(it.channelId, gogGamesForRegion)
+                        }
+
+                        delay(Duration.ofHours(24).toMillis())
+                    } while (true)
+                }
                 // schedule Steam notifications
                 launch {
                     delay(countDelayTo(17, tag = "steam"))
                     do {
                         val gamesGuildsAndChannels = guildsManager.getGamesChannelsIds()
-                        val guildsWithRegions = gamesGuildsAndChannels.map { it.first to (guildsManager.getGuildRegion(it.first) ?: "en") }
-                        val steamGames = steamGamesService.load(guildsWithRegions.map { it.second }.distinct())
-                        gamesGuildsAndChannels.forEach { (guildId, channelId) ->
-                            val region = guildsWithRegions.first { it.first == guildId }.second
-                            val steamGamesForRegion = steamGames?.get(region)
-                            gamesDispatcher.showSteamGames(channelId, steamGamesForRegion)
+                        val steamGames = steamGamesService.load(gamesGuildsAndChannels.map { it.region }.distinct())
+                        gamesGuildsAndChannels.forEach {
+                            val steamGamesForRegion = steamGames?.get(it.region)
+                            gamesDispatcher.showSteamGames(it.channelId, steamGamesForRegion)
                         }
                         delay(Duration.ofHours(24).toMillis())
                     } while (true)
@@ -134,12 +129,10 @@ class MainBot(
                     delay(countDelayTo(18, tag = "egs"))
                     do {
                         val gamesGuildsAndChannels = guildsManager.getGamesChannelsIds()
-                        val guildsWithRegions = gamesGuildsAndChannels.map { it.first to (guildsManager.getGuildRegion(it.first) ?: "en") }
-                        val egsGames = epicGamesService.load(guildsWithRegions.map { it.second }.distinct())
-                        gamesGuildsAndChannels.forEach { (guildId, channelId) ->
-                            val region = guildsWithRegions.first { it.first == guildId }.second
-                            val egsGamesForRegion = egsGames?.get(region)
-                            gamesDispatcher.showEgsGames(channelId, egsGamesForRegion)
+                        val egsGames = epicGamesService.load(gamesGuildsAndChannels.map { it.region }.distinct())
+                        gamesGuildsAndChannels.forEach {
+                            val egsGamesForRegion = egsGames?.get(it.region)
+                            gamesDispatcher.showEgsGames(it.channelId, egsGamesForRegion)
                         }
                         delay(Duration.ofHours(24).toMillis())
                     } while (true)

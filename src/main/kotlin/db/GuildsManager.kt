@@ -88,12 +88,13 @@ class GuildsManager(
         return setString(guildId, Guilds.watchedMoviesChannelId, channelId)
     }
 
-    fun getGamesChannelsIds(): List<Pair<String, String>> {
+    fun getGamesChannelsIds(): List<GameChannel> {
         return transaction(database) {
             Guilds.selectAll().mapNotNull {
                 val id = it.getOrNull(Guilds.id) ?: return@mapNotNull null
                 val channelId = it.getOrNull(Guilds.gamesChannelId) ?: return@mapNotNull null
-                id to channelId
+                val region = it.getOrNull(Guilds.region)
+                GameChannel(id, channelId, region ?: "en")
             }
         }
     }

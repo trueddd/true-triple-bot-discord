@@ -26,23 +26,19 @@ class MinecraftDispatcher(
     private val set = Commands.Minecraft.SET.commandRegex(singleWordCommand = false)
 
     override suspend fun onMessageCreate(event: MessageCreateEvent, trimmedMessage: String) {
-        println("entered dispatcher")
         val guildId = event.message.getGuild().id.value
         val channelId = event.message.channelId.value
         when {
             set.matches(trimmedMessage) -> {
-                println("set")
                 if (!event.isSentByAdmin()) {
                     respondWithReaction(event.message, false)
                     return
                 }
                 val newIp = trimmedMessage.removePrefix(Commands.Minecraft.SET).trim()
-                println("new IP: $newIp")
                 val changed = guildsManager.setMinecraftServerIp(guildId, newIp)
                 respondWithReaction(event.message, changed)
             }
             else -> {
-                println("else")
                 val serverIp = guildsManager.getMinecraftServerIp(guildId) ?: run {
                     respondWithReaction(event.message, false)
                     return

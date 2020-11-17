@@ -72,18 +72,18 @@ class GamesDispatcher(
                 respondWithReaction(event.message, changed)
             }
             egs.matches(trimmedMessage) -> {
-                val region = guildsManager.getGuildRegion(guildId)
-                val games = epicGamesService.load(listOf(region ?: "en"))?.get(region) ?: return
+                val region = guildsManager.getGuildRegion(guildId) ?: "en"
+                val games = epicGamesService.load(listOf(region))?.get(region) ?: return
                 showEgsGames(channelId, games)
             }
             steam.matches(trimmedMessage) -> {
-                val region = guildsManager.getGuildRegion(guildId)
-                val games = steamGamesService.load(listOf(region ?: "en"))?.get(region) ?: return
+                val region = guildsManager.getGuildRegion(guildId) ?: "en"
+                val games = steamGamesService.load(listOf(region))?.get(region) ?: return
                 showSteamGames(channelId, games)
             }
             gog.matches(trimmedMessage) -> {
-                val region = guildsManager.getGuildRegion(guildId)
-                val games = gogGamesService.load(listOf(region ?: "en"))?.get(region) ?: return
+                val region = guildsManager.getGuildRegion(guildId) ?: "en"
+                val games = gogGamesService.load(listOf(region))?.get(region) ?: return
                 showGogGames(channelId, games)
             }
             cracked.matches(trimmedMessage) -> {
