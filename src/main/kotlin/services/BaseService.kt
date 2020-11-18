@@ -1,5 +1,6 @@
 package services
 
+import com.google.gson.GsonBuilder
 import io.ktor.client.*
 import io.ktor.client.engine.okhttp.*
 import io.ktor.client.features.json.*
@@ -12,8 +13,12 @@ abstract class BaseService(
     protected val client by lazy {
         HttpClient(OkHttp) {
             install(JsonFeature) {
-                serializer = GsonSerializer()
+                serializer = GsonSerializer {
+                    configGson()
+                }
             }
         }
     }
+
+    protected open fun GsonBuilder.configGson() {}
 }

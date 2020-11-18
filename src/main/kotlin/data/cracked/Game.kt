@@ -14,8 +14,6 @@ data class Game(
     val isAAA: Boolean,
     @SerializedName("ratings")
     val ratings: Int,
-    @SerializedName("releaseDate")
-    val releaseDate: Date,
     @SerializedName("slug")
     val slug: String,
     @SerializedName("title")
