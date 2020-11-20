@@ -29,6 +29,7 @@ class CommonDispatcher(
     private val pick = Commands.Common.PICK.commandRegex(false, RegexOption.DOT_MATCHES_ALL)
     private val locale = Commands.Common.LOCALE.commandRegex(singleWordCommand = false)
     private val roleSet = Regex("^${Commands.Common.ROLE_GETTER}\\s+<@&(\\d+)>\\s+<:(.+):\\d+>.*$")
+    private val poll = Commands.Common.POLL.commandRegex(false, RegexOption.DOT_MATCHES_ALL)
 
     override suspend fun onMessageCreate(event: MessageCreateEvent, trimmedMessage: String) {
         when {
@@ -57,6 +58,9 @@ class CommonDispatcher(
                 } else false
                 respondWithReaction(event.message, success)
             }
+            poll.matches(trimmedMessage) -> {
+                createPoll(trimmedMessage.removePrefix(Commands.Common.POLL).trim(), event.message)
+            }
         }
     }
 
@@ -83,6 +87,10 @@ class CommonDispatcher(
                 name = getCommand(Commands.Common.ROLE_GETTER)
                 value = "Создаёт выдачу роли пользователям, которые поставят указанное эмодзи в реакцию под сообщением с этой командой. Пример: `${BaseBot.BOT_PREFIX}${Commands.Common.ROLE_GETTER} <выдаваемая роль> <эмодзи>`. Также можно снять роль, убрав свою реакцию."
             }
+            field {
+                name = getCommand(Commands.Common.POLL)
+                value = "Создаёт голосование с вопросом, написанным после команды текстом."
+            }
         }
     }
 
@@ -101,6 +109,24 @@ class CommonDispatcher(
             }
             postMessage(message.channel, chosen, Color.ORANGE)
         }
+    }
+
+    private suspend fun createPoll(messageText: String, message: Message) {
+        val newMessage = client.rest.channel.createMessage(message.channelId.value) {
+            embed {
+                message.author?.let {
+                    author {
+                        icon = it.avatar.url
+                        name = it.username
+                    }
+                }
+                description = messageText
+                color = Color(185, 185, 0)
+            }
+        }
+        client.rest.channel.createReaction(newMessage.channelId, newMessage.id, "➕")
+        client.rest.channel.createReaction(newMessage.channelId, newMessage.id, "➖")
+        message.delete()
     }
 
     private suspend fun setLocale(localeString: String, message: Message) {
