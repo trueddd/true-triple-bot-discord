@@ -124,8 +124,8 @@ class CommonDispatcher(
                 color = Color(185, 185, 0)
             }
         }
-        client.rest.channel.createReaction(newMessage.channelId, newMessage.id, "➕")
-        client.rest.channel.createReaction(newMessage.channelId, newMessage.id, "➖")
+        client.rest.channel.createReaction(newMessage.channelId, newMessage.id, "\uD83D\uDC4D")
+        client.rest.channel.createReaction(newMessage.channelId, newMessage.id, "\uD83D\uDC4E")
         message.delete()
     }
 
