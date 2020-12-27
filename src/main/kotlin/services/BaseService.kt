@@ -4,6 +4,7 @@ import com.google.gson.GsonBuilder
 import io.ktor.client.*
 import io.ktor.client.engine.okhttp.*
 import io.ktor.client.features.json.*
+import io.ktor.client.features.logging.*
 import org.jetbrains.exposed.sql.Database
 
 abstract class BaseService(
@@ -16,6 +17,10 @@ abstract class BaseService(
                 serializer = GsonSerializer {
                     configGson()
                 }
+            }
+            install(Logging) {
+                logger = Logger.DEFAULT
+                level = LogLevel.BODY
             }
         }
     }
