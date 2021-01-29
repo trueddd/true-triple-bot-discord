@@ -12,6 +12,7 @@ import db.GuildsManager
 import utils.Commands
 import utils.commandRegex
 import utils.isSentByAdmin
+import utils.random.WeightedDice
 import utils.setDefaultStatus
 import java.awt.Color
 import java.text.SimpleDateFormat
@@ -33,34 +34,43 @@ class MoviesDispatcher(
         return dispatcherPrefix
     }
 
-    private suspend fun getMovieList(moviesChannelId: String): Map<Int, List<DiscordMessage>> {
+    private suspend fun getMovieList(moviesChannelId: String): List<Pair<DiscordMessage, Int>> {
         val messages = client.rest.channel.getMessages(moviesChannelId, limit = 100)
-        return messages
-            .groupBy { it.reactions?.firstOrNull { reaction -> reaction.emoji.name == "\uD83D\uDC4D" }?.count ?: 0 }
+        return messages.map { it to (it.reactions?.firstOrNull { reaction -> reaction.emoji.name == "\uD83D\uDC4D" }?.count ?: 0) }
     }
 
     private suspend fun showMoviesToRoll(channelId: String, moviesChannelId: String) {
-        getMovieList(moviesChannelId)
-            .maxByOrNull { it.key }
-            ?.let { entry ->
-                val newText = entry.value.mapIndexed { index, it ->
-                    "${index + 1}. ${it.content} от ${getMention(it.author)}"
+        val movies = getMovieList(moviesChannelId)
+        if (movies.isEmpty()) {
+            postErrorMessage(channelId, "Нечего смотреть")
+            return
+        }
+        val allReactionsCount = movies.sumBy { it.second }
+        movies
+            .sortedByDescending { it.second }
+            .take(15)
+            .let { entry ->
+                val newText = entry.mapIndexed { index, (message, likes) ->
+                    "${index + 1}. ${message.content} от ${getMention(message.author)} - *${String.format("%.1f%%", 100.0 * likes / allReactionsCount)}*"
                 }.joinToString("\n")
-                val votesCount = entry.value.first().reactions?.firstOrNull { it.emoji.name == "\uD83D\uDC4D" }?.count ?: 0
-                postMessage(channelId, "Фильмы с наибольшим количесвом лайков ($votesCount лайка у каждого):\n$newText")
-            } ?: postErrorMessage(channelId, "Нечего смотреть")
+                postMessage(channelId, "Фильмы с наибольшим количеством лайков (первые 15):\n$newText")
+            }
     }
 
     private suspend fun rollMovies(channel: MessageChannelBehavior, moviesChannelId: String, withSearch: Boolean = false) {
-        getMovieList(moviesChannelId)
-            .maxByOrNull { it.key }
-            ?.value?.randomOrNull()
-            ?.let {
-                postMessage(channel, "**${it.content}** от ${getMention(it.author)} :trophy:")
-                if (withSearch) {
-                    searchForMovie(channel, it.content)
-                }
-            } ?: postErrorMessage(channel, "Нечего смотреть")
+        val movies = getMovieList(moviesChannelId)
+        if (movies.isEmpty()) {
+            postErrorMessage(moviesChannelId, "Нечего смотреть")
+            return
+        }
+        val allReactionsCount = movies.sumBy { it.second }
+        val dice = WeightedDice(movies.map { it.first to it.second.toDouble() })
+        val winner = dice.roll()
+        val chance = winner.reactions?.firstOrNull { reaction -> reaction.emoji.name == "\uD83D\uDC4D" }?.count ?: 0
+        postMessage(channel, "**${winner.content}** от ${getMention(winner.author)} :trophy: (*${String.format("%.1f%%", 100.0 * chance / allReactionsCount)}*)")
+        if (withSearch) {
+            searchForMovie(channel, winner.content)
+        }
     }
 
     private suspend fun getMovie(name: String): Pair<String, Movie?>? {

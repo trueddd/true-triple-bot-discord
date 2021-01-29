@@ -12,8 +12,8 @@ application {
 }
 
 repositories {
-    mavenLocal()
     jcenter()
+    mavenLocal()
     maven { url = uri("http://dl.bintray.com/kotlin/kotlin-eap") }
     maven { url = uri("http://kotlin.bintray.com/ktor") }
     maven { url = uri("https://dl.bintray.com/kotlin/kotlinx") }
@@ -67,10 +67,10 @@ tasks.register("stage") {
 tasks.register<Jar>("fatJar") {
     manifest {
         attributes(
-                mapOf(
-                        "Main-Class" to application.mainClassName,
-                        "Class-Path" to configurations.compile
-                )
+            mapOf(
+                "Main-Class" to application.mainClassName,
+                "Class-Path" to configurations.compile
+            )
         )
     }
     archiveBaseName.set("${project.name}-all")
