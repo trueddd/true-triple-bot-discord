@@ -15,6 +15,7 @@ repositories {
     jcenter()
     mavenLocal()
     maven { url = uri("http://dl.bintray.com/kotlin/kotlin-eap") }
+    maven { url = uri("https://oss.sonatype.org/content/repositories/snapshots") }
     maven { url = uri("http://kotlin.bintray.com/ktor") }
     maven { url = uri("https://dl.bintray.com/kotlin/kotlinx") }
     maven(url = "https://dl.bintray.com/kordlib/Kord")
@@ -42,7 +43,7 @@ dependencies {
     implementation("io.ktor:ktor-client-gson:$ktorVersion")
     implementation("io.ktor:ktor-client-logging-jvm:$ktorVersion")
 
-    implementation("com.gitlab.kordlib.kord:kord-core:0.6.3")
+    implementation("dev.kord:kord-core:0.7.0-RC")
 
     implementation("org.jsoup:jsoup:1.13.1")
 

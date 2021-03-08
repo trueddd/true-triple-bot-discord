@@ -1,13 +1,18 @@
 package services
 
-import com.gitlab.kordlib.core.Kord
-import com.gitlab.kordlib.core.event.gateway.ReadyEvent
-import com.gitlab.kordlib.core.event.message.MessageCreateEvent
-import com.gitlab.kordlib.core.event.message.MessageDeleteEvent
-import com.gitlab.kordlib.core.event.message.ReactionAddEvent
-import com.gitlab.kordlib.core.event.message.ReactionRemoveEvent
-import com.gitlab.kordlib.core.on
 import db.GuildsManager
+import dev.kord.common.entity.DiscordPartialGuild
+import dev.kord.common.entity.Snowflake
+import dev.kord.core.Kord
+import dev.kord.core.event.gateway.ReadyEvent
+import dev.kord.core.event.guild.GuildDeleteEvent
+import dev.kord.core.event.guild.MemberLeaveEvent
+import dev.kord.core.event.message.MessageCreateEvent
+import dev.kord.core.event.message.MessageDeleteEvent
+import dev.kord.core.event.message.ReactionAddEvent
+import dev.kord.core.event.message.ReactionRemoveEvent
+import dev.kord.core.on
+import dev.kord.rest.route.Position
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import dispatchers.*
@@ -50,6 +55,15 @@ class MainBot(
     private val minecraftPattern = Regex("^${minecraftDispatcher.getPrefix()}.*", RegexOption.DOT_MATCHES_ALL)
 
     override suspend fun attach() {
+        client.rest.channel
+        client.on<MemberLeaveEvent> {
+            if (user.id.value == client.selfId.value) {
+                guildsManager.removeGuild(guildId.asString)
+            }
+        }
+        client.on<GuildDeleteEvent> {
+            guildsManager.removeGuild(guildId.asString)
+        }
         client.on<ReactionAddEvent> {
             addReactionListeners.forEach {
                 it.onReactionAdd(this)
@@ -89,9 +103,10 @@ class MainBot(
                     delay(countDelayTo(15, tag = "cracked"))
                     do {
                         val gamesGuildsAndChannels = guildsManager.getGamesChannelsIds()
-                        val crackedGames = crackedGamesService.load()
+                        val crackedGames = crackedGamesService.load()?.values?.firstOrNull()
+                            ?.filter { it.crackDate.time > System.currentTimeMillis() - Duration.ofDays(1).toMillis() }
                         gamesGuildsAndChannels.forEach { (_, channelId, _) ->
-                            gamesDispatcher.showCrackedGames(channelId, crackedGames?.values?.firstOrNull())
+                            gamesDispatcher.showCrackedGames(Snowflake(channelId), crackedGames)
                         }
 
                         delay(Duration.ofHours(24).toMillis())
@@ -105,7 +120,7 @@ class MainBot(
                         val gogGames = gogGamesService.load(gamesGuildsAndChannels.map { it.region }.distinct())
                         gamesGuildsAndChannels.forEach {
                             val gogGamesForRegion = gogGames?.get(it.region)
-                            gamesDispatcher.showGogGames(it.channelId, gogGamesForRegion)
+                            gamesDispatcher.showGogGames(Snowflake(it.channelId), gogGamesForRegion)
                         }
 
                         delay(Duration.ofHours(24).toMillis())
@@ -119,7 +134,7 @@ class MainBot(
                         val steamGames = steamGamesService.load(gamesGuildsAndChannels.map { it.region }.distinct())
                         gamesGuildsAndChannels.forEach {
                             val steamGamesForRegion = steamGames?.get(it.region)
-                            gamesDispatcher.showSteamGames(it.channelId, steamGamesForRegion)
+                            gamesDispatcher.showSteamGames(Snowflake(it.channelId), steamGamesForRegion)
                         }
                         delay(Duration.ofHours(24).toMillis())
                     } while (true)
@@ -132,13 +147,30 @@ class MainBot(
                         val egsGames = epicGamesService.load(gamesGuildsAndChannels.map { it.region }.distinct())
                         gamesGuildsAndChannels.forEach {
                             val egsGamesForRegion = egsGames?.get(it.region)
-                            gamesDispatcher.showEgsGames(it.channelId, egsGamesForRegion)
+                            gamesDispatcher.showEgsGames(Snowflake(it.channelId), egsGamesForRegion)
                         }
                         delay(Duration.ofHours(24).toMillis())
                     } while (true)
                 }
             }
         }
+    }
+
+    suspend fun checkGuilds() {
+        val guilds = getAllGuilds()
+        guildsManager.removeGuildsIgnore(guilds.map { it.id.asString })
+    }
+
+    private suspend fun getAllGuilds(): List<DiscordPartialGuild> {
+        val guilds = mutableListOf<DiscordPartialGuild>()
+        while (true) {
+            val chunk = client.rest.user.getCurrentUserGuilds(if (guilds.isEmpty()) null else Position.After(guilds.last().id))
+            if (chunk.isEmpty()) {
+                break
+            }
+            guilds.addAll(chunk)
+        }
+        return guilds
     }
 
     private fun countDelayTo(hour: Int, minutes: Int = 0, tag: String = ""): Long {

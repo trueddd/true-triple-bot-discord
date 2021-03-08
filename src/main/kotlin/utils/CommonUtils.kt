@@ -1,12 +1,12 @@
 package utils
 
-import com.gitlab.kordlib.common.entity.Permission
-import com.gitlab.kordlib.core.Kord
-import com.gitlab.kordlib.core.behavior.channel.MessageChannelBehavior
-import com.gitlab.kordlib.core.behavior.channel.createMessage
-import com.gitlab.kordlib.core.event.message.MessageCreateEvent
+import dev.kord.common.Color
+import dev.kord.common.entity.Permission
+import dev.kord.core.Kord
+import dev.kord.core.behavior.channel.MessageChannelBehavior
+import dev.kord.core.behavior.channel.createMessage
+import dev.kord.core.event.message.MessageCreateEvent
 import services.BaseBot
-import java.awt.Color
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -20,7 +20,7 @@ fun String.egsDate(): Date {
     }
 }
 
-suspend fun MessageChannelBehavior.createBotMessage(message: String, embedColor: Color = Color.MAGENTA) {
+suspend fun MessageChannelBehavior.createBotMessage(message: String, embedColor: Color = Color(255, 0, 255)) {
     createMessage {
         content = ""
         embed {

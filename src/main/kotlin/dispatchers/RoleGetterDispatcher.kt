@@ -1,11 +1,11 @@
 package dispatchers
 
-import com.gitlab.kordlib.common.entity.Snowflake
-import com.gitlab.kordlib.core.Kord
-import com.gitlab.kordlib.core.event.message.MessageDeleteEvent
-import com.gitlab.kordlib.core.event.message.ReactionAddEvent
-import com.gitlab.kordlib.core.event.message.ReactionRemoveEvent
 import db.GuildsManager
+import dev.kord.common.entity.Snowflake
+import dev.kord.core.Kord
+import dev.kord.core.event.message.MessageDeleteEvent
+import dev.kord.core.event.message.ReactionAddEvent
+import dev.kord.core.event.message.ReactionRemoveEvent
 
 class RoleGetterDispatcher(
     private val guildsManager: GuildsManager,
@@ -16,23 +16,23 @@ class RoleGetterDispatcher(
         get() = ""
 
     override suspend fun onReactionAdd(event: ReactionAddEvent) {
-        val guildId = event.guildId?.value ?: ""
-        val messageId = event.message.id.value
+        val guildId = event.guildId?.asString ?: ""
+        val messageId = event.message.id.asString
         val emoji = event.emoji.name
         val roleId = guildsManager.getRoleIdByMessageAndEmoji(messageId, emoji) ?: return
         event.user.asMember(Snowflake(guildId)).addRole(Snowflake(roleId))
     }
 
     override suspend fun onReactionRemove(event: ReactionRemoveEvent) {
-        val guildId = event.guildId?.value ?: ""
-        val messageId = event.message.id.value
+        val guildId = event.guildId?.asString ?: ""
+        val messageId = event.message.id.asString
         val emoji = event.emoji.name
         val roleId = guildsManager.getRoleIdByMessageAndEmoji(messageId, emoji) ?: return
         event.user.asMember(Snowflake(guildId)).removeRole(Snowflake(roleId))
     }
 
     override suspend fun onMessageDelete(event: MessageDeleteEvent) {
-        val messageId = event.messageId.value
+        val messageId = event.messageId.asString
         if (guildsManager.isRoleGetterMessage(messageId)) {
             guildsManager.unsetRoleGetter(messageId)
         }

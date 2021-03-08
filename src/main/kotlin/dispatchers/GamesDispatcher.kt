@@ -1,14 +1,16 @@
 package dispatchers
 
-import com.gitlab.kordlib.core.Kord
-import com.gitlab.kordlib.core.behavior.channel.MessageChannelBehavior
-import com.gitlab.kordlib.core.behavior.channel.createEmbed
-import com.gitlab.kordlib.core.event.message.MessageCreateEvent
 import data.cracked.Game
 import data.egs.GiveAwayGame
 import data.gog.Product
 import data.steam.SteamGame
 import db.GuildsManager
+import dev.kord.common.Color
+import dev.kord.common.entity.Snowflake
+import dev.kord.core.Kord
+import dev.kord.core.behavior.channel.MessageChannelBehavior
+import dev.kord.core.behavior.channel.createEmbed
+import dev.kord.core.event.message.MessageCreateEvent
 import io.ktor.util.*
 import services.CrackedGamesService
 import services.EpicGamesService
@@ -17,7 +19,6 @@ import services.SteamGamesService
 import utils.Commands
 import utils.commandRegex
 import utils.isSentByAdmin
-import java.awt.Color
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.util.*
@@ -49,8 +50,8 @@ class GamesDispatcher(
     private val cracked = Commands.Games.CRACKED.commandRegex()
 
     override suspend fun onMessageCreate(event: MessageCreateEvent, trimmedMessage: String) {
-        val guildId = event.message.getGuild().id.value
-        val channelId = event.message.channelId.value
+        val guildId = event.message.getGuild().id.asString
+        val channelId = event.message.channelId
         when {
             help.matches(trimmedMessage) -> {
                 showHelp(event.message.channel)
@@ -60,7 +61,7 @@ class GamesDispatcher(
                     respondWithReaction(event.message, false)
                     return
                 }
-                val changed = guildsManager.setGamesChannel(guildId, channelId)
+                val changed = guildsManager.setGamesChannel(guildId, channelId.asString)
                 respondWithReaction(event.message, changed)
             }
             unset.matches(trimmedMessage) -> {
@@ -133,7 +134,7 @@ class GamesDispatcher(
         }
     }
 
-    suspend fun showEgsGames(channelId: String, elements: List<GiveAwayGame>?) {
+    suspend fun showEgsGames(channelId: Snowflake, elements: List<GiveAwayGame>?) {
         val messageColor = Color(12, 12, 12)
         if (elements == null || elements.isEmpty()) {
             postErrorMessage(channelId, "Игры не раздают", messageColor)
@@ -169,7 +170,7 @@ class GamesDispatcher(
         }
     }
 
-    suspend fun showSteamGames(channelId: String, elements: List<SteamGame>?) {
+    suspend fun showSteamGames(channelId: Snowflake, elements: List<SteamGame>?) {
         val messageColor = Color(27, 40, 56)
         if (elements == null || elements.isEmpty()) {
             postErrorMessage(channelId, "Не получилось со Stream\'ом", messageColor)
@@ -206,7 +207,7 @@ class GamesDispatcher(
         }
     }
 
-    suspend fun showGogGames(channelId: String, elements: List<Product>?) {
+    suspend fun showGogGames(channelId: Snowflake, elements: List<Product>?) {
         val messageColor = Color(104, 0, 209)
         if (elements == null || elements.isEmpty()) {
             postErrorMessage(channelId, "Не получилось с GOG\'ом", messageColor)
@@ -250,10 +251,13 @@ class GamesDispatcher(
         }
     }
 
-    suspend fun showCrackedGames(channelId: String, elements: List<Game>?) {
+    suspend fun showCrackedGames(channelId: Snowflake, elements: List<Game>?) {
         val messageColor = Color(237, 28, 35)
-        if (elements == null || elements.isEmpty()) {
+        if (elements == null) {
             postErrorMessage(channelId, "Не получилось с кряками", messageColor)
+            return
+        }
+        if (elements.isEmpty()) {
             return
         }
         client.rest.channel.createMessage(channelId) {

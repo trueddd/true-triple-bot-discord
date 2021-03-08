@@ -1,9 +1,9 @@
 package dispatchers
 
-import com.gitlab.kordlib.core.event.message.MessageCreateEvent
-import com.gitlab.kordlib.core.event.message.MessageDeleteEvent
-import com.gitlab.kordlib.core.event.message.ReactionAddEvent
-import com.gitlab.kordlib.core.event.message.ReactionRemoveEvent
+import dev.kord.core.event.message.MessageCreateEvent
+import dev.kord.core.event.message.MessageDeleteEvent
+import dev.kord.core.event.message.ReactionAddEvent
+import dev.kord.core.event.message.ReactionRemoveEvent
 
 interface MessageCreateListener {
     fun getPrefix(): String

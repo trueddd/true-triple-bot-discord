@@ -1,17 +1,17 @@
 package dispatchers
 
-import com.gitlab.kordlib.core.Kord
-import com.gitlab.kordlib.core.behavior.channel.MessageChannelBehavior
-import com.gitlab.kordlib.core.behavior.channel.createEmbed
-import com.gitlab.kordlib.core.entity.Message
-import com.gitlab.kordlib.core.event.message.MessageCreateEvent
 import db.GuildsManager
+import dev.kord.common.Color
+import dev.kord.core.Kord
+import dev.kord.core.behavior.channel.MessageChannelBehavior
+import dev.kord.core.behavior.channel.createEmbed
+import dev.kord.core.entity.Message
+import dev.kord.core.event.message.MessageCreateEvent
 import services.BaseBot
 import utils.Commands
 import utils.commandRegex
 import utils.isSentByAdmin
 import utils.replaceIfMatches
-import java.awt.Color
 
 class CommonDispatcher(
     private val guildsManager: GuildsManager,
@@ -54,7 +54,7 @@ class CommonDispatcher(
                 val role = trimmedMessage.replaceIfMatches(roleSet, "$1")
                 val emoji = trimmedMessage.replaceIfMatches(roleSet, "$2")
                 val success = if (role != null && emoji != null) {
-                    guildsManager.setRoleGetterEmoji(event.message.id.value, role, emoji)
+                    guildsManager.setRoleGetterEmoji(event.message.id.asString, role, emoji)
                 } else false
                 respondWithReaction(event.message, success)
             }
@@ -66,7 +66,7 @@ class CommonDispatcher(
 
     private suspend fun showHelp(channel: MessageChannelBehavior) {
         channel.createEmbed {
-            color = Color.MAGENTA
+            color = magentaColor
             field {
                 name = getCommand(Commands.Movies.HELP, customPrefix = "movies")
                 value = "Справка по командам для фильмов"
@@ -107,12 +107,12 @@ class CommonDispatcher(
                 respondWithReaction(message, false)
                 return
             }
-            postMessage(message.channel, chosen, Color.ORANGE)
+            postMessage(message.channel, chosen, Color(250, 200, 0))
         }
     }
 
     private suspend fun createPoll(messageText: String, message: Message) {
-        val newMessage = client.rest.channel.createMessage(message.channelId.value) {
+        val newMessage = client.rest.channel.createMessage(message.channelId) {
             embed {
                 message.author?.let {
                     author {
@@ -130,7 +130,7 @@ class CommonDispatcher(
     }
 
     private suspend fun setLocale(localeString: String, message: Message) {
-        val success = guildsManager.setGuildRegion(message.getGuild().id.value, localeString)
+        val success = guildsManager.setGuildRegion(message.getGuild().id.asString, localeString)
         respondWithReaction(message, success)
     }
 }

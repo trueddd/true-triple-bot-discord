@@ -1,20 +1,21 @@
 package dispatchers
 
 import services.GoogleService
-import com.gitlab.kordlib.common.entity.DiscordMessage
-import com.gitlab.kordlib.core.Kord
-import com.gitlab.kordlib.core.behavior.channel.MessageChannelBehavior
-import com.gitlab.kordlib.core.behavior.channel.createEmbed
-import com.gitlab.kordlib.core.event.message.MessageCreateEvent
-import com.gitlab.kordlib.core.event.message.ReactionAddEvent
 import data.movies.Movie
 import db.GuildsManager
+import dev.kord.common.Color
+import dev.kord.common.entity.DiscordMessage
+import dev.kord.common.entity.Snowflake
+import dev.kord.core.Kord
+import dev.kord.core.behavior.channel.MessageChannelBehavior
+import dev.kord.core.behavior.channel.createEmbed
+import dev.kord.core.event.message.MessageCreateEvent
+import dev.kord.core.event.message.ReactionAddEvent
 import utils.Commands
 import utils.commandRegex
 import utils.isSentByAdmin
 import utils.random.WeightedDice
 import utils.setDefaultStatus
-import java.awt.Color
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -35,14 +36,15 @@ class MoviesDispatcher(
     }
 
     private suspend fun getMovieList(moviesChannelId: String): List<Pair<DiscordMessage, Int>> {
-        val messages = client.rest.channel.getMessages(moviesChannelId, limit = 100)
-        return messages.map { it to (it.reactions?.firstOrNull { reaction -> reaction.emoji.name == "\uD83D\uDC4D" }?.count ?: 0) }
+        val messages = client.rest.channel.getMessages(Snowflake(moviesChannelId), limit = 100)
+        return messages.map { it to (it.reactions.value?.firstOrNull { reaction -> reaction.emoji.name == "\uD83D\uDC4D" }?.count ?: 0) }
     }
 
     private suspend fun showMoviesToRoll(channelId: String, moviesChannelId: String) {
         val movies = getMovieList(moviesChannelId)
+        val channelSnowflake = Snowflake(channelId)
         if (movies.isEmpty()) {
-            postErrorMessage(channelId, "Нечего смотреть")
+            postErrorMessage(channelSnowflake, "Нечего смотреть")
             return
         }
         val allReactionsCount = movies.sumBy { it.second }
@@ -53,20 +55,20 @@ class MoviesDispatcher(
                 val newText = entry.mapIndexed { index, (message, likes) ->
                     "${index + 1}. ${message.content} от ${getMention(message.author)} - *${String.format("%.1f%%", 100.0 * likes / allReactionsCount)}*"
                 }.joinToString("\n")
-                postMessage(channelId, "Фильмы с наибольшим количеством лайков (первые 15):\n$newText")
+                postMessage(channelSnowflake, "Фильмы с наибольшим количеством лайков (первые 15):\n$newText")
             }
     }
 
     private suspend fun rollMovies(channel: MessageChannelBehavior, moviesChannelId: String, withSearch: Boolean = false) {
         val movies = getMovieList(moviesChannelId)
         if (movies.isEmpty()) {
-            postErrorMessage(moviesChannelId, "Нечего смотреть")
+            postErrorMessage(Snowflake(moviesChannelId), "Нечего смотреть")
             return
         }
         val allReactionsCount = movies.sumBy { it.second }
         val dice = WeightedDice(movies.map { it.first to it.second.toDouble() })
         val winner = dice.roll()
-        val chance = winner.reactions?.firstOrNull { reaction -> reaction.emoji.name == "\uD83D\uDC4D" }?.count ?: 0
+        val chance = winner.reactions.value?.firstOrNull { reaction -> reaction.emoji.name == "\uD83D\uDC4D" }?.count ?: 0
         postMessage(channel, "**${winner.content}** от ${getMention(winner.author)} :trophy: (*${String.format("%.1f%%", 100.0 * chance / allReactionsCount)}*)")
         if (withSearch) {
             searchForMovie(channel, winner.content)
@@ -93,7 +95,7 @@ class MoviesDispatcher(
             return
         }
         channel.createEmbed {
-            color = Color.MAGENTA
+            color = magentaColor
             title = movie?.name ?: movieName
             author {
                 icon = "http://baskino.me/templates/Baskino/images/favicon.png"
@@ -151,13 +153,13 @@ class MoviesDispatcher(
     private val notifyUnset = Commands.Movies.NOTIFY_UNSET.commandRegex()
 
     override suspend fun onMessageCreate(event: MessageCreateEvent, trimmedMessage: String) {
-        val guildId = event.message.getGuild().id.value
-        val channelId = event.message.channelId.value
+        val guildId = event.message.getGuild().id.asString
+        val channelId = event.message.channelId.asString
         when {
             trimmedMessage.matches(top) -> {
                 val moviesChannelId = guildsManager.getMoviesListChannel(guildId)
                 if (moviesChannelId == null) {
-                    postErrorMessage(channelId, "Не установлен канал со списком фильмов (${getCommand(Commands.Movies.SET)} в канале с фильмами)")
+                    postErrorMessage(Snowflake(channelId), "Не установлен канал со списком фильмов (${getCommand(Commands.Movies.SET)} в канале с фильмами)")
                 } else {
                     showMoviesToRoll(channelId, moviesChannelId)
                 }
@@ -252,15 +254,15 @@ class MoviesDispatcher(
     }
 
     override suspend fun onReactionAdd(event: ReactionAddEvent) {
-        val guildId = event.guildId?.value ?: ""
-        val channelId = event.message.channelId.value
+        val guildId = event.guildId?.asString ?: ""
+        val channelId = event.message.channelId.asString
         when {
             event.emoji.name == "✅" && guildsManager.getMoviesListChannel(guildId) == channelId -> {
                 client.setDefaultStatus()
                 val watchedChannelId = guildsManager.getWatchedMoviesChannelId(guildId) ?: return
                 val movieName = event.message.asMessage().content
                 event.message.delete()
-                client.rest.channel.createMessage(watchedChannelId) {
+                client.rest.channel.createMessage(Snowflake(watchedChannelId)) {
                     content = movieName
                 }
             }
@@ -271,7 +273,7 @@ class MoviesDispatcher(
                     val notification = moviesRoleId?.let {
                         "<@&$it>, смотрим $movieName"
                     } ?: "Смотрим \"$movieName\""
-                    postMessage(moviesNotifyChannelId, notification, messageColor = Color.BLUE)
+                    postMessage(Snowflake(moviesNotifyChannelId), notification, Color(0, 0, 255))
                 }
             }
         }

@@ -1,15 +1,17 @@
 package dispatchers
 
-import com.gitlab.kordlib.common.entity.DiscordChannel
-import com.gitlab.kordlib.common.entity.DiscordUser
-import com.gitlab.kordlib.core.Kord
-import com.gitlab.kordlib.core.behavior.channel.MessageChannelBehavior
-import com.gitlab.kordlib.core.entity.Message
-import com.gitlab.kordlib.core.entity.ReactionEmoji
+import dev.kord.common.Color
+import dev.kord.common.entity.DiscordUser
+import dev.kord.common.entity.Snowflake
+import dev.kord.core.Kord
+import dev.kord.core.behavior.channel.MessageChannelBehavior
+import dev.kord.core.entity.Message
+import dev.kord.core.entity.ReactionEmoji
 import services.BaseBot
-import java.awt.Color
 
 abstract class BaseDispatcher(protected val client: Kord) {
+
+    protected val magentaColor = Color(255, 0, 255)
 
     private val okEmoji: ReactionEmoji by lazy {
         ReactionEmoji.Unicode(OK_EMOJI_SYMBOL)
@@ -21,7 +23,7 @@ abstract class BaseDispatcher(protected val client: Kord) {
 
     abstract val dispatcherPrefix: String
 
-    suspend fun postMessage(channelId: String, message: String, messageColor: Color = Color.MAGENTA) {
+    suspend fun postMessage(channelId: Snowflake, message: String, messageColor: Color = magentaColor) {
         client.rest.channel.createMessage(channelId) {
             content = ""
             embed {
@@ -31,11 +33,11 @@ abstract class BaseDispatcher(protected val client: Kord) {
         }
     }
 
-    suspend fun postMessage(channel: MessageChannelBehavior, message: String, messageColor: Color = Color.MAGENTA) {
-        postMessage(channel.id.value, message, messageColor)
+    suspend fun postMessage(channel: MessageChannelBehavior, message: String, messageColor: Color = magentaColor) {
+        postMessage(channel.id, message, messageColor)
     }
 
-    suspend fun postErrorMessage(channelId: String, message: String, messageColor: Color = Color.MAGENTA) {
+    suspend fun postErrorMessage(channelId: Snowflake, message: String, messageColor: Color = magentaColor) {
         client.rest.channel.createMessage(channelId) {
             embed {
                 color = messageColor
@@ -47,8 +49,8 @@ abstract class BaseDispatcher(protected val client: Kord) {
         }
     }
 
-    suspend fun postErrorMessage(channel: MessageChannelBehavior, message: String, messageColor: Color = Color.MAGENTA) {
-        postErrorMessage(channel.id.value, message, messageColor)
+    suspend fun postErrorMessage(channel: MessageChannelBehavior, message: String, messageColor: Color = magentaColor) {
+        postErrorMessage(channel.id, message, messageColor)
     }
 
     suspend fun respondWithReaction(message: Message, success: Boolean) {
@@ -62,8 +64,6 @@ abstract class BaseDispatcher(protected val client: Kord) {
     }
 
     protected fun getMention(user: DiscordUser) = "<@!${user.id}>"
-
-    protected fun getChannelMention(channel: DiscordChannel) = "<#${channel.id}>"
 
     protected fun getChannelMention(channelId: String) = "<#${channelId}>"
 

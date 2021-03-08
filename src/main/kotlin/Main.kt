@@ -1,17 +1,10 @@
-import com.gitlab.kordlib.core.Kord
 import db.GuildsManager
+import dev.kord.core.Kord
 import io.ktor.application.Application
-import io.ktor.application.install
-import io.ktor.features.CORS
-import io.ktor.features.CallLogging
-import io.ktor.http.HttpHeaders
-import io.ktor.http.HttpMethod
-import io.ktor.request.path
 import io.ktor.server.engine.embeddedServer
 import io.ktor.server.netty.Netty
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
-import org.slf4j.event.Level
 import services.*
 import services.BaseBot.Companion.BOT_PREFIX
 import utils.AppEnvironment
@@ -36,25 +29,11 @@ fun Application.module() {
         val client = Kord(AppEnvironment.getBotSecret())
 
         val bot = MainBot(guildsManager, epicGamesService, steamGamesService, gogGamesService, crackedGamesService, minecraftService, client)
+        bot.checkGuilds()
         bot.attach()
 
         client.login {
             listening("${BOT_PREFIX}${Commands.Common.HELP}")
         }
-    }
-
-    install(CallLogging) {
-        level = Level.INFO
-        filter { call -> call.request.path().startsWith("/") }
-    }
-
-    install(CORS) {
-        method(HttpMethod.Options)
-        method(HttpMethod.Put)
-        method(HttpMethod.Delete)
-        method(HttpMethod.Patch)
-        header(HttpHeaders.Authorization)
-        allowCredentials = true
-        anyHost()
     }
 }

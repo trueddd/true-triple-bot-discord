@@ -1,14 +1,15 @@
 package dispatchers
 
-import com.gitlab.kordlib.core.Kord
-import com.gitlab.kordlib.core.event.message.MessageCreateEvent
 import data.minecraft.StatusResponse
 import db.GuildsManager
+import dev.kord.common.Color
+import dev.kord.common.entity.Snowflake
+import dev.kord.core.Kord
+import dev.kord.core.event.message.MessageCreateEvent
 import services.MinecraftService
 import utils.Commands
 import utils.commandRegex
 import utils.isSentByAdmin
-import java.awt.Color
 
 class MinecraftDispatcher(
     private val guildsManager: GuildsManager,
@@ -26,8 +27,8 @@ class MinecraftDispatcher(
     private val set = Commands.Minecraft.SET.commandRegex(singleWordCommand = false)
 
     override suspend fun onMessageCreate(event: MessageCreateEvent, trimmedMessage: String) {
-        val guildId = event.message.getGuild().id.value
-        val channelId = event.message.channelId.value
+        val guildId = event.message.getGuild().id.asString
+        val channelId = event.message.channelId
         when {
             set.matches(trimmedMessage) -> {
                 if (!event.isSentByAdmin()) {
@@ -49,7 +50,7 @@ class MinecraftDispatcher(
         }
     }
 
-    private suspend fun showMinecraftServerStatus(channelId: String, statusResponse: StatusResponse?) {
+    private suspend fun showMinecraftServerStatus(channelId: Snowflake, statusResponse: StatusResponse?) {
         val messageColor = Color(48, 116, 26)
         if (statusResponse == null) {
             postErrorMessage(channelId, "Не смог получить информацию о сервере", messageColor)

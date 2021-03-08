@@ -1,6 +1,6 @@
 package services
 
-import com.gitlab.kordlib.core.Kord
+import dev.kord.core.Kord
 
 abstract class BaseBot(
     protected val client: Kord,

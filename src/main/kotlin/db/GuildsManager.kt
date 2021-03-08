@@ -7,6 +7,18 @@ class GuildsManager(
     private val database: Database
 ) {
 
+    fun removeGuildsIgnore(ids: List<String>) {
+        return transaction(database) {
+            Guilds.deleteWhere { Guilds.id notInList ids }
+        }
+    }
+
+    fun removeGuild(id: String) {
+        return transaction(database) {
+            Guilds.deleteWhere { Guilds.id eq id }
+        }
+    }
+
     private fun getString(guildId: String, column: Column<String?>): String? {
         return transaction(database) {
             Guilds.select { Guilds.id eq guildId }.singleOrNull()?.getOrNull(column)
