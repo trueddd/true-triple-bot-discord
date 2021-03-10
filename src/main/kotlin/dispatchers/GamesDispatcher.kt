@@ -186,7 +186,9 @@ class GamesDispatcher(
                 }
                 elements.forEach {
                     field {
-                        name = it.name
+                        name = it.name.let {
+                            if (it.length <= 64) it else "${it.take(64)}..."
+                        }
                         value = if (it.price.originalPrice != null && it.price.currentPrice != null) {
                             buildString {
                                 append("[")

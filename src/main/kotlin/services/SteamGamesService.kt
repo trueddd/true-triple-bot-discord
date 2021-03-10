@@ -1,6 +1,10 @@
 package services
 
+import com.google.gson.GsonBuilder
+import com.google.gson.reflect.TypeToken
+import data.adapter.SteamPriceOverviewAdapter
 import data.steam.GamePriceInfo
+import data.steam.PriceOverview
 import data.steam.SteamGame
 import data.steam.SteamGamePrice
 import io.ktor.client.request.*
@@ -11,6 +15,10 @@ class SteamGamesService(database: Database) : BaseGamesService<SteamGame>(databa
 
     private val storeUrl = "https://store.steampowered.com/specials#p=0&tab=TopSellers"
     private val pricesUrl = "https://store.steampowered.com/api/appdetails/"
+
+    override fun GsonBuilder.configGson() {
+        registerTypeAdapter(PriceOverview::class.java, SteamPriceOverviewAdapter())
+    }
 
     override suspend fun load(regions: List<String>): Map<String, List<SteamGame>>? {
         return try {
@@ -30,10 +38,15 @@ class SteamGamesService(database: Database) : BaseGamesService<SteamGame>(databa
             val steamGamesWithRegions = mutableMapOf<String, List<SteamGame>>()
             val gameIds = games.joinToString(",") { it.id }
             regions.forEach { region ->
-                val gamesPrices = client.get<Map<String, GamePriceInfo>>(pricesUrl) {
+                val gamesPrices = client.get<String>(pricesUrl) {
                     parameter("cc", region)
                     parameter("filters", "price_overview")
                     parameter("appids", gameIds)
+                }.let {
+                    // fixme: clean up this shit
+                    val raw = it.replace("\"data\":[]", "\"data\":null")
+                    val type = TypeToken.getParameterized(Map::class.java, String::class.java, GamePriceInfo::class.java)
+                    gson.fromJson<Map<String, GamePriceInfo>>(raw, type.type)
                 }
                 steamGamesWithRegions[region] = games.map {
                     val regionalPrice = gamesPrices[it.id]?.data?.priceOverview
