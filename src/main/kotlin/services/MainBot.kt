@@ -106,7 +106,11 @@ class MainBot(
                         val crackedGames = crackedGamesService.load()?.values?.firstOrNull()
                             ?.filter { it.crackDate.time > System.currentTimeMillis() - Duration.ofDays(1).toMillis() }
                         gamesGuildsAndChannels.forEach { (_, channelId, _) ->
-                            gamesDispatcher.showCrackedGames(Snowflake(channelId), crackedGames)
+                            try {
+                                gamesDispatcher.showCrackedGames(Snowflake(channelId), crackedGames)
+                            } catch (e: Exception) {
+                                e.printStackTrace()
+                            }
                         }
 
                         delay(Duration.ofHours(24).toMillis())
@@ -120,7 +124,11 @@ class MainBot(
                         val gogGames = gogGamesService.load(gamesGuildsAndChannels.map { it.region }.distinct())
                         gamesGuildsAndChannels.forEach {
                             val gogGamesForRegion = gogGames?.get(it.region)
-                            gamesDispatcher.showGogGames(Snowflake(it.channelId), gogGamesForRegion)
+                            try {
+                                gamesDispatcher.showGogGames(Snowflake(it.channelId), gogGamesForRegion)
+                            } catch (e: Exception) {
+                                e.printStackTrace()
+                            }
                         }
 
                         delay(Duration.ofHours(24).toMillis())
@@ -134,7 +142,11 @@ class MainBot(
                         val steamGames = steamGamesService.load(gamesGuildsAndChannels.map { it.region }.distinct())
                         gamesGuildsAndChannels.forEach {
                             val steamGamesForRegion = steamGames?.get(it.region)
-                            gamesDispatcher.showSteamGames(Snowflake(it.channelId), steamGamesForRegion)
+                            try {
+                                gamesDispatcher.showSteamGames(Snowflake(it.channelId), steamGamesForRegion)
+                            } catch (e: Exception) {
+                                e.printStackTrace()
+                            }
                         }
                         delay(Duration.ofHours(24).toMillis())
                     } while (true)
@@ -147,7 +159,11 @@ class MainBot(
                         val egsGames = epicGamesService.load(gamesGuildsAndChannels.map { it.region }.distinct())
                         gamesGuildsAndChannels.forEach {
                             val egsGamesForRegion = egsGames?.get(it.region)
-                            gamesDispatcher.showEgsGames(Snowflake(it.channelId), egsGamesForRegion)
+                            try {
+                                gamesDispatcher.showEgsGames(Snowflake(it.channelId), egsGamesForRegion)
+                            } catch (e: Exception) {
+                                e.printStackTrace()
+                            }
                         }
                         delay(Duration.ofHours(24).toMillis())
                     } while (true)
