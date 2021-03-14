@@ -141,6 +141,7 @@ class GamesDispatcher(
             return
         }
         client.rest.channel.createMessage(channelId) {
+            val now = LocalDateTime.now()
             embed {
                 color = messageColor
                 author {
@@ -150,7 +151,6 @@ class GamesDispatcher(
                 }
                 elements.forEach { game ->
                     field {
-                        val now = LocalDateTime.now()
                         name = game.title
                         val date = when {
                             game.promotion == null -> "Free"

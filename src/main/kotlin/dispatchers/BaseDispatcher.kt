@@ -63,7 +63,7 @@ abstract class BaseDispatcher(protected val client: Kord) {
         }
     }
 
-    protected fun getMention(user: DiscordUser) = "<@!${user.id}>"
+    protected fun getMention(user: DiscordUser) = "<@!${user.id.asString}>"
 
     protected fun getChannelMention(channelId: String) = "<#${channelId}>"
 

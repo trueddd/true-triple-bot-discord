@@ -15,7 +15,6 @@ import utils.Commands
 import utils.commandRegex
 import utils.isSentByAdmin
 import utils.random.WeightedDice
-import utils.setDefaultStatus
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -258,7 +257,6 @@ class MoviesDispatcher(
         val channelId = event.message.channelId.asString
         when {
             event.emoji.name == "✅" && guildsManager.getMoviesListChannel(guildId) == channelId -> {
-                client.setDefaultStatus()
                 val watchedChannelId = guildsManager.getWatchedMoviesChannelId(guildId) ?: return
                 val movieName = event.message.asMessage().content
                 event.message.delete()
