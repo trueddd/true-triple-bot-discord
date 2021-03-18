@@ -103,8 +103,9 @@ class MainBot(
                     delay(countDelayTo(15, tag = "cracked"))
                     do {
                         val gamesGuildsAndChannels = guildsManager.getGamesChannelsIds()
+                        val now = System.currentTimeMillis()
                         val crackedGames = crackedGamesService.load()?.values?.firstOrNull()
-                            ?.filter { it.crackDate.time > System.currentTimeMillis() - Duration.ofDays(1).toMillis() }
+                            ?.filter { it.crackDate.time > now - Duration.ofDays(1).toMillis() }
                         gamesGuildsAndChannels.forEach { (_, channelId, _) ->
                             try {
                                 gamesDispatcher.showCrackedGames(Snowflake(channelId), crackedGames)
