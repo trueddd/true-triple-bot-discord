@@ -88,8 +88,9 @@ class GamesDispatcher(
                 showGogGames(channelId, games)
             }
             cracked.matches(trimmedMessage) -> {
-                val cracked = crackedGamesService.load()
-                showCrackedGames(channelId, cracked?.values?.firstOrNull())
+                showCrackedPlaceholder(channelId)
+//                val cracked = crackedGamesService.load()
+//                showCrackedGames(channelId, cracked?.values?.firstOrNull())
             }
         }
     }
@@ -249,6 +250,23 @@ class GamesDispatcher(
                         value = "[click](https://www.gog.com/games?sort=popularity&page=1&tab=on_sale)"
                     }
                 }
+            }
+        }
+    }
+
+    private suspend fun showCrackedPlaceholder(channelId: Snowflake) {
+        val messageColor = Color(237, 28, 35)
+        client.rest.channel.createMessage(channelId) {
+            embed {
+                color = messageColor
+                author {
+                    icon = "https://img7.androidappsapk.co/OurDjLyAKt2YTXvtMPQfHkQd07NmdEOpAwfqy1_cy9pxG3CX6vOu88mVh20TJa30ZdQ=s300"
+                    name = "Последние взломанные игры"
+                    url = "https://crackwatch.com/games"
+                }
+                description = "Работа сервиса crackwatch.com временно [приостановлена](https://crackwatch.com)." +
+                        " Для обеспечения работы бота вскоре будет найдена альтернатива," +
+                        " в ином случае придётся ждать возобновления работы CrackWatch."
             }
         }
     }

@@ -99,24 +99,24 @@ class MainBot(
         if (AppEnvironment.isProdEnv()) {
             client.on<ReadyEvent> {
                 // schedule cracked games notifications
-                launch {
-                    delay(countDelayTo(15, tag = "cracked"))
-                    do {
-                        val gamesGuildsAndChannels = guildsManager.getGamesChannelsIds()
-                        val now = System.currentTimeMillis()
-                        val crackedGames = crackedGamesService.load()?.values?.firstOrNull()
-                            ?.filter { it.crackDate.time > now - Duration.ofDays(1).toMillis() }
-                        gamesGuildsAndChannels.forEach { (_, channelId, _) ->
-                            try {
-                                gamesDispatcher.showCrackedGames(Snowflake(channelId), crackedGames)
-                            } catch (e: Exception) {
-                                e.printStackTrace()
-                            }
-                        }
-
-                        delay(Duration.ofHours(24).toMillis())
-                    } while (true)
-                }
+//                launch {
+//                    delay(countDelayTo(15, tag = "cracked"))
+//                    do {
+//                        val gamesGuildsAndChannels = guildsManager.getGamesChannelsIds()
+//                        val now = System.currentTimeMillis()
+//                        val crackedGames = crackedGamesService.load()?.values?.firstOrNull()
+//                            ?.filter { it.crackDate.time > now - Duration.ofDays(1).toMillis() }
+//                        gamesGuildsAndChannels.forEach { (_, channelId, _) ->
+//                            try {
+//                                gamesDispatcher.showCrackedGames(Snowflake(channelId), crackedGames)
+//                            } catch (e: Exception) {
+//                                e.printStackTrace()
+//                            }
+//                        }
+//
+//                        delay(Duration.ofHours(24).toMillis())
+//                    } while (true)
+//                }
                 // schedule GOG notifications
                 launch {
                     delay(countDelayTo(16, tag = "gog"))
