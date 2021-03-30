@@ -12,6 +12,7 @@ import utils.Commands
 import utils.commandRegex
 import utils.isSentByAdmin
 import utils.replaceIfMatches
+import java.net.URL
 
 class CommonDispatcher(
     private val guildsManager: GuildsManager,
@@ -111,7 +112,20 @@ class CommonDispatcher(
         }
     }
 
+    private fun String.isUrl(): Boolean {
+        return try {
+            URL(this)
+            true
+        } catch (e: Exception) {
+            false
+        }
+    }
+
+    private val imageRegex = Regex("-link (?<link>\\S*)", RegexOption.DOT_MATCHES_ALL)
+
     private suspend fun createPoll(messageText: String, message: Message) {
+        val urlText = imageRegex.find(messageText)?.groups?.get("link")?.value?.let { if (it.isUrl()) it else null }
+        val text = if (urlText == null) messageText else messageText.replace(imageRegex, "")
         val newMessage = client.rest.channel.createMessage(message.channelId) {
             embed {
                 message.author?.let {
@@ -120,7 +134,12 @@ class CommonDispatcher(
                         name = it.username
                     }
                 }
-                description = messageText
+                urlText?.let {
+                    thumbnail {
+                        url = it
+                    }
+                }
+                description = text
                 color = Color(185, 185, 0)
             }
         }
