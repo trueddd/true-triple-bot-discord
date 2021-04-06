@@ -11,6 +11,8 @@ object AppEnvironment {
     private const val GOOGLE_KEY = "GOOGLE_KEY"
     private const val SEARCH_ENGINE = "SEARCH_ENGINE"
 
+    val BOT_PREFIX = if (isTestEnv()) "test-ttb!" else "ttb!"
+
     fun getPort() = System.getenv(PORT)?.toInt() ?: 8080
     fun getBotSecret(): String = System.getenv(BOT_SECRET)
     fun getDatabaseUrl(): String = System.getenv(DATABASE_URL)

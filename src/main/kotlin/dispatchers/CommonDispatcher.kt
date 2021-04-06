@@ -7,11 +7,7 @@ import dev.kord.core.behavior.channel.MessageChannelBehavior
 import dev.kord.core.behavior.channel.createEmbed
 import dev.kord.core.entity.Message
 import dev.kord.core.event.message.MessageCreateEvent
-import services.BaseBot
-import utils.Commands
-import utils.commandRegex
-import utils.isSentByAdmin
-import utils.replaceIfMatches
+import utils.*
 import java.net.URL
 
 class CommonDispatcher(
@@ -86,7 +82,7 @@ class CommonDispatcher(
             }
             field {
                 name = getCommand(Commands.Common.ROLE_GETTER)
-                value = "Создаёт выдачу роли пользователям, которые поставят указанное эмодзи в реакцию под сообщением с этой командой. Пример: `${BaseBot.BOT_PREFIX}${Commands.Common.ROLE_GETTER} <выдаваемая роль> <эмодзи>`. Также можно снять роль, убрав свою реакцию."
+                value = "Создаёт выдачу роли пользователям, которые поставят указанное эмодзи в реакцию под сообщением с этой командой. Пример: `${AppEnvironment.BOT_PREFIX}${Commands.Common.ROLE_GETTER} <выдаваемая роль> <эмодзи>`. Также можно снять роль, убрав свою реакцию."
             }
             field {
                 name = getCommand(Commands.Common.POLL)
@@ -135,9 +131,7 @@ class CommonDispatcher(
                     }
                 }
                 urlText?.let {
-                    thumbnail {
-                        url = it
-                    }
+                    image = it
                 }
                 description = text
                 color = Color(185, 185, 0)

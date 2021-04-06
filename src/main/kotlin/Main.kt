@@ -6,7 +6,6 @@ import io.ktor.server.netty.Netty
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import services.*
-import services.BaseBot.Companion.BOT_PREFIX
 import utils.AppEnvironment
 import utils.Commands
 import utils.provideDatabase
@@ -33,7 +32,7 @@ fun Application.module() {
         bot.attach()
 
         client.login {
-            listening("${BOT_PREFIX}${Commands.Common.HELP}")
+            listening("${AppEnvironment.BOT_PREFIX}${Commands.Common.HELP}")
         }
     }
 }

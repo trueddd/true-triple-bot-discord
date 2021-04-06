@@ -7,7 +7,7 @@ import dev.kord.core.Kord
 import dev.kord.core.behavior.channel.MessageChannelBehavior
 import dev.kord.core.entity.Message
 import dev.kord.core.entity.ReactionEmoji
-import services.BaseBot
+import utils.AppEnvironment
 
 abstract class BaseDispatcher(protected val client: Kord) {
 
@@ -69,7 +69,7 @@ abstract class BaseDispatcher(protected val client: Kord) {
 
     fun getCommand(commandName: String, customPrefix: String? = null, format: Boolean = true): String {
         val commandPrefix = customPrefix ?: dispatcherPrefix
-        val commandText = "${BaseBot.BOT_PREFIX}${commandPrefix}${if (commandPrefix.isEmpty()) "" else PREFIX_DELIMITER}${commandName}"
+        val commandText = "${AppEnvironment.BOT_PREFIX}${commandPrefix}${if (commandPrefix.isEmpty()) "" else PREFIX_DELIMITER}${commandName}"
         return if (format) {
             "`$commandText`"
         } else {

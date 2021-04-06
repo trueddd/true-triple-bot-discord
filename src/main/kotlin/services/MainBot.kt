@@ -49,7 +49,7 @@ class MainBot(
         setOf(roleGetterDispatcher)
     }
 
-    private val botPrefixPattern = Regex("^$BOT_PREFIX.*", RegexOption.DOT_MATCHES_ALL)
+    private val botPrefixPattern = Regex("^${AppEnvironment.BOT_PREFIX}.*", RegexOption.DOT_MATCHES_ALL)
     private val gamesPattern = Regex("^${gamesDispatcher.getPrefix()}.*", RegexOption.DOT_MATCHES_ALL)
     private val moviesPattern = Regex("^${moviesDispatcher.getPrefix()}.*", RegexOption.DOT_MATCHES_ALL)
     private val minecraftPattern = Regex("^${minecraftDispatcher.getPrefix()}.*", RegexOption.DOT_MATCHES_ALL)
@@ -81,7 +81,7 @@ class MainBot(
             if (!message.content.matches(botPrefixPattern)) {
                 return@on
             }
-            val messageText = message.content.removePrefix(BOT_PREFIX)
+            val messageText = message.content.removePrefix(AppEnvironment.BOT_PREFIX)
             val dispatcher = when {
                 gamesPattern.matches(messageText) -> gamesDispatcher
                 moviesPattern.matches(messageText) -> moviesDispatcher

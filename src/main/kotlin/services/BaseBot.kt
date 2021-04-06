@@ -7,8 +7,4 @@ abstract class BaseBot(
 ) {
 
     abstract suspend fun attach()
-
-    companion object {
-        const val BOT_PREFIX = "ttb!"
-    }
 }
