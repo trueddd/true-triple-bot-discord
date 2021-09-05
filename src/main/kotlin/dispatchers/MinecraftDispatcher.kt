@@ -6,6 +6,7 @@ import dev.kord.common.Color
 import dev.kord.common.entity.Snowflake
 import dev.kord.core.Kord
 import dev.kord.core.event.message.MessageCreateEvent
+import dev.kord.rest.builder.message.create.embed
 import services.MinecraftService
 import utils.Commands
 import utils.commandRegex

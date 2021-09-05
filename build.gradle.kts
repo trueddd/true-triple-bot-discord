@@ -21,37 +21,37 @@ repositories {
     maven(url = "https://dl.bintray.com/kordlib/Kord")
 }
 
+fun DependencyHandlerScope.ktor(name: String) = implementation("io.ktor", name, "1.4.1")
+fun DependencyHandlerScope.exposed(name: String) = implementation("org.jetbrains.exposed", name, "0.27.1")
+
 dependencies {
-    val ktorVersion = "1.4.1"
     val kotlinVersion = "1.4.0"
     val logbackVersion = "1.2.3"
     val postgresDriverVersion = "42.2.2"
-    val exposedVersion = "0.27.1"
 
     implementation("ch.qos.logback:logback-classic:$logbackVersion")
     implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlinVersion")
-    implementation("io.ktor:ktor-server-core:$ktorVersion")
-    implementation("io.ktor:ktor-server-netty:$ktorVersion")
-    implementation("io.ktor:ktor-websockets:$ktorVersion")
-    implementation("io.ktor:ktor-gson:$ktorVersion")
+    ktor("ktor-server-core")
+    ktor("ktor-server-netty")
+    ktor("ktor-websockets")
+    ktor("ktor-gson")
+    ktor("ktor-client-core")
+    ktor("ktor-client-cio")
+    ktor("ktor-client-websockets")
+    ktor("ktor-client-okhttp")
+    ktor("ktor-client-json")
+    ktor("ktor-client-gson")
+    ktor("ktor-client-logging-jvm")
 
-    implementation("io.ktor:ktor-client-core:$ktorVersion")
-    implementation("io.ktor:ktor-client-cio:$ktorVersion")
-    implementation("io.ktor:ktor-client-websockets:$ktorVersion")
-    implementation("io.ktor:ktor-client-okhttp:$ktorVersion")
-    implementation("io.ktor:ktor-client-json:$ktorVersion")
-    implementation("io.ktor:ktor-client-gson:$ktorVersion")
-    implementation("io.ktor:ktor-client-logging-jvm:$ktorVersion")
-
-    implementation("dev.kord:kord-core:0.7.0-RC")
+    implementation("dev.kord:kord-core:0.8.0-M5")
 
     implementation("org.jsoup:jsoup:1.13.1")
 
     implementation("org.postgresql:postgresql:$postgresDriverVersion")
-    implementation("org.jetbrains.exposed", "exposed-core", exposedVersion)
-    implementation("org.jetbrains.exposed", "exposed-dao", exposedVersion)
-    implementation("org.jetbrains.exposed", "exposed-jdbc", exposedVersion)
-    implementation("org.jetbrains.exposed", "exposed-java-time", exposedVersion)
+    exposed("exposed-core")
+    exposed("exposed-dao")
+    exposed("exposed-jdbc")
+    exposed("exposed-java-time")
 }
 
 sourceSets {
@@ -83,4 +83,5 @@ tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile::class.java).all 
     kotlinOptions.freeCompilerArgs += "-Xuse-experimental=io.ktor.util.KtorExperimentalAPI"
     kotlinOptions.freeCompilerArgs += "-Xuse-experimental=io.ktor.util.InternalAPI"
     kotlinOptions.freeCompilerArgs += "-Xuse-experimental=kotlin.ExperimentalStdlibApi"
+    kotlinOptions.useIR = true
 }

@@ -11,6 +11,7 @@ import dev.kord.core.Kord
 import dev.kord.core.behavior.channel.MessageChannelBehavior
 import dev.kord.core.behavior.channel.createEmbed
 import dev.kord.core.event.message.MessageCreateEvent
+import dev.kord.rest.builder.message.create.embed
 import io.ktor.util.*
 import services.CrackedGamesService
 import services.EpicGamesService
@@ -264,9 +265,7 @@ class GamesDispatcher(
                     name = "Последние взломанные игры"
                     url = "https://crackwatch.com/games"
                 }
-                description = "Работа сервиса crackwatch.com временно [приостановлена](https://crackwatch.com)." +
-                        " Для обеспечения работы бота вскоре будет найдена альтернатива," +
-                        " в ином случае придётся ждать возобновления работы CrackWatch."
+                description = "Работа сервиса crackwatch.com временно [приостановлена](https://crackwatch.com)."
             }
         }
     }
@@ -294,13 +293,7 @@ class GamesDispatcher(
                 elements.take(takeFirst).forEach {
                     field {
                         name = it.title
-                        value = buildString {
-                            append("[")
-                            append("Взломано ")
-                            append(it.crackDate.formatContext())
-                            append("]")
-                            append("(https://crackwatch.com/game/${it.slug})")
-                        }
+                        value = "[Взломано ${it.crackDate.formatContext()}](https://crackwatch.com/game/${it.slug})"
                         inline = true
                     }
                 }

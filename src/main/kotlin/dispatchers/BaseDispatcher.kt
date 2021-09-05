@@ -7,6 +7,7 @@ import dev.kord.core.Kord
 import dev.kord.core.behavior.channel.MessageChannelBehavior
 import dev.kord.core.entity.Message
 import dev.kord.core.entity.ReactionEmoji
+import dev.kord.rest.builder.message.create.embed
 import utils.AppEnvironment
 
 abstract class BaseDispatcher(protected val client: Kord) {

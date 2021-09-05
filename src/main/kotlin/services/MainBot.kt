@@ -1,26 +1,35 @@
 package services
 
+import Scheduler
 import db.GuildsManager
+import dev.kord.common.annotation.KordPreview
 import dev.kord.common.entity.DiscordPartialGuild
+import dev.kord.common.entity.InteractionResponseType
 import dev.kord.common.entity.Snowflake
+import dev.kord.common.entity.optional.Optional
 import dev.kord.core.Kord
 import dev.kord.core.event.gateway.ReadyEvent
 import dev.kord.core.event.guild.GuildDeleteEvent
 import dev.kord.core.event.guild.MemberLeaveEvent
+import dev.kord.core.event.interaction.InteractionCreateEvent
 import dev.kord.core.event.message.MessageCreateEvent
 import dev.kord.core.event.message.MessageDeleteEvent
 import dev.kord.core.event.message.ReactionAddEvent
 import dev.kord.core.event.message.ReactionRemoveEvent
 import dev.kord.core.on
+import dev.kord.gateway.Event
+import dev.kord.gateway.InteractionCreate
+import dev.kord.rest.builder.interaction.OptionsBuilder
+import dev.kord.rest.json.request.InteractionApplicationCommandCallbackData
+import dev.kord.rest.json.request.InteractionResponseCreateRequest
+import dev.kord.rest.json.request.MultipartFollowupMessageCreateRequest
 import dev.kord.rest.route.Position
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 import dispatchers.*
+import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.onEach
 import utils.AppEnvironment
-import java.time.Duration
-import java.time.LocalDateTime
-import java.time.temporal.ChronoUnit
 
+@KordPreview
 class MainBot(
     private val guildsManager: GuildsManager,
     private val epicGamesService: EpicGamesService,
@@ -49,13 +58,16 @@ class MainBot(
         setOf(roleGetterDispatcher)
     }
 
+    private val scheduler: Scheduler by lazy {
+        Scheduler(guildsManager, epicGamesService, steamGamesService, gogGamesService, crackedGamesService, client)
+    }
+
     private val botPrefixPattern = Regex("^${AppEnvironment.BOT_PREFIX}.*", RegexOption.DOT_MATCHES_ALL)
     private val gamesPattern = Regex("^${gamesDispatcher.getPrefix()}.*", RegexOption.DOT_MATCHES_ALL)
     private val moviesPattern = Regex("^${moviesDispatcher.getPrefix()}.*", RegexOption.DOT_MATCHES_ALL)
     private val minecraftPattern = Regex("^${minecraftDispatcher.getPrefix()}.*", RegexOption.DOT_MATCHES_ALL)
 
     override suspend fun attach() {
-        client.rest.channel
         client.on<MemberLeaveEvent> {
             if (user.id.value == client.selfId.value) {
                 guildsManager.removeGuild(guildId.asString)
@@ -81,6 +93,7 @@ class MainBot(
             if (!message.content.matches(botPrefixPattern)) {
                 return@on
             }
+            println("Message: ${message.content}. From ${message.getGuild().id.asString}")
             val messageText = message.content.removePrefix(AppEnvironment.BOT_PREFIX)
             val dispatcher = when {
                 gamesPattern.matches(messageText) -> gamesDispatcher
@@ -95,82 +108,43 @@ class MainBot(
             }
             dispatcher.onMessageCreate(this, trimmedMessage)
         }
+        client.on<InteractionCreateEvent> {
+            kord.rest.interaction.createInteractionResponse(
+                interaction.id,
+                interaction.token,
+                InteractionResponseCreateRequest(
+                    InteractionResponseType.ChannelMessageWithSource,
+                    Optional.Value(
+                        InteractionApplicationCommandCallbackData(
+                            content = Optional.Value(
+                                "Hello :)"
+                            )
+                        )
+                    )
+                )
+            )
+        }
 
         if (AppEnvironment.isProdEnv()) {
             client.on<ReadyEvent> {
-                // schedule cracked games notifications
-//                launch {
-//                    delay(countDelayTo(15, tag = "cracked"))
-//                    do {
-//                        val gamesGuildsAndChannels = guildsManager.getGamesChannelsIds()
-//                        val now = System.currentTimeMillis()
-//                        val crackedGames = crackedGamesService.load()?.values?.firstOrNull()
-//                            ?.filter { it.crackDate.time > now - Duration.ofDays(1).toMillis() }
-//                        gamesGuildsAndChannels.forEach { (_, channelId, _) ->
-//                            try {
-//                                gamesDispatcher.showCrackedGames(Snowflake(channelId), crackedGames)
-//                            } catch (e: Exception) {
-//                                e.printStackTrace()
-//                            }
-//                        }
-//
-//                        delay(Duration.ofHours(24).toMillis())
-//                    } while (true)
-//                }
-                // schedule GOG notifications
-                launch {
-                    delay(countDelayTo(16, tag = "gog"))
-                    do {
-                        val gamesGuildsAndChannels = guildsManager.getGamesChannelsIds()
-                        val gogGames = gogGamesService.load(gamesGuildsAndChannels.map { it.region }.distinct())
-                        gamesGuildsAndChannels.forEach {
-                            val gogGamesForRegion = gogGames?.get(it.region)
-                            try {
-                                gamesDispatcher.showGogGames(Snowflake(it.channelId), gogGamesForRegion)
-                            } catch (e: Exception) {
-                                e.printStackTrace()
-                            }
-                        }
-
-                        delay(Duration.ofHours(24).toMillis())
-                    } while (true)
-                }
-                // schedule Steam notifications
-                launch {
-                    delay(countDelayTo(17, tag = "steam"))
-                    do {
-                        val gamesGuildsAndChannels = guildsManager.getGamesChannelsIds()
-                        val steamGames = steamGamesService.load(gamesGuildsAndChannels.map { it.region }.distinct())
-                        gamesGuildsAndChannels.forEach {
-                            val steamGamesForRegion = steamGames?.get(it.region)
-                            try {
-                                gamesDispatcher.showSteamGames(Snowflake(it.channelId), steamGamesForRegion)
-                            } catch (e: Exception) {
-                                e.printStackTrace()
-                            }
-                        }
-                        delay(Duration.ofHours(24).toMillis())
-                    } while (true)
-                }
-                // schedule Epic Games Store notifications
-                launch {
-                    delay(countDelayTo(18, tag = "egs"))
-                    do {
-                        val gamesGuildsAndChannels = guildsManager.getGamesChannelsIds()
-                        val egsGames = epicGamesService.load(gamesGuildsAndChannels.map { it.region }.distinct())
-                        gamesGuildsAndChannels.forEach {
-                            val egsGamesForRegion = egsGames?.get(it.region)
-                            try {
-                                gamesDispatcher.showEgsGames(Snowflake(it.channelId), egsGamesForRegion)
-                            } catch (e: Exception) {
-                                e.printStackTrace()
-                            }
-                        }
-                        delay(Duration.ofHours(24).toMillis())
-                    } while (true)
-                }
+//                scheduler.scheduleCracked()
+                scheduler.scheduleGog()
+                scheduler.scheduleSteam()
+                scheduler.scheduleEgs()
             }
         }
+
+        if (AppEnvironment.isTestEnv()) {
+            println("Slash commands")
+            createSlashCommands()
+        }
+    }
+
+    private suspend fun createSlashCommands() {
+//        client.on<InteractionCreateEvent> {
+//            println("Interaction: ${this.interaction.command}")
+//        }
+        client.createGuildChatInputCommand(Snowflake("884176842783879189"), "test", "description")
     }
 
     suspend fun checkGuilds() {
@@ -188,23 +162,5 @@ class MainBot(
             guilds.addAll(chunk)
         }
         return guilds
-    }
-
-    private fun countDelayTo(hour: Int, minutes: Int = 0, tag: String = ""): Long {
-        return LocalDateTime.now()
-            .withHour(hour)
-            .withMinute(minutes)
-            .withSecond(0)
-            .let {
-                val temp = if (LocalDateTime.now().hour >= hour) {
-                    it.plusDays(1)
-                } else {
-                    it
-                }
-                println("Next notify is scheduled on $it ($tag)")
-                return@let ChronoUnit.MILLIS.between(LocalDateTime.now(), temp).also { d ->
-                    println("Delay is $d")
-                }
-            }
     }
 }
