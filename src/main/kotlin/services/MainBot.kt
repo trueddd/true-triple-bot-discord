@@ -108,22 +108,22 @@ class MainBot(
             }
             dispatcher.onMessageCreate(this, trimmedMessage)
         }
-        client.on<InteractionCreateEvent> {
-            kord.rest.interaction.createInteractionResponse(
-                interaction.id,
-                interaction.token,
-                InteractionResponseCreateRequest(
-                    InteractionResponseType.ChannelMessageWithSource,
-                    Optional.Value(
-                        InteractionApplicationCommandCallbackData(
-                            content = Optional.Value(
-                                "Hello :)"
-                            )
-                        )
-                    )
-                )
-            )
-        }
+//        client.on<InteractionCreateEvent> {
+//            kord.rest.interaction.createInteractionResponse(
+//                interaction.id,
+//                interaction.token,
+//                InteractionResponseCreateRequest(
+//                    InteractionResponseType.ChannelMessageWithSource,
+//                    Optional.Value(
+//                        InteractionApplicationCommandCallbackData(
+//                            content = Optional.Value(
+//                                "Hello :)"
+//                            )
+//                        )
+//                    )
+//                )
+//            )
+//        }
 
         if (AppEnvironment.isProdEnv()) {
             client.on<ReadyEvent> {
