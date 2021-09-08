@@ -4,29 +4,17 @@ import Scheduler
 import db.GuildsManager
 import dev.kord.common.annotation.KordPreview
 import dev.kord.common.entity.DiscordPartialGuild
-import dev.kord.common.entity.InteractionResponseType
 import dev.kord.common.entity.Snowflake
-import dev.kord.common.entity.optional.Optional
 import dev.kord.core.Kord
 import dev.kord.core.event.gateway.ReadyEvent
 import dev.kord.core.event.guild.GuildDeleteEvent
-import dev.kord.core.event.guild.MemberLeaveEvent
-import dev.kord.core.event.interaction.InteractionCreateEvent
 import dev.kord.core.event.message.MessageCreateEvent
 import dev.kord.core.event.message.MessageDeleteEvent
 import dev.kord.core.event.message.ReactionAddEvent
 import dev.kord.core.event.message.ReactionRemoveEvent
 import dev.kord.core.on
-import dev.kord.gateway.Event
-import dev.kord.gateway.InteractionCreate
-import dev.kord.rest.builder.interaction.OptionsBuilder
-import dev.kord.rest.json.request.InteractionApplicationCommandCallbackData
-import dev.kord.rest.json.request.InteractionResponseCreateRequest
-import dev.kord.rest.json.request.MultipartFollowupMessageCreateRequest
 import dev.kord.rest.route.Position
 import dispatchers.*
-import kotlinx.coroutines.flow.filter
-import kotlinx.coroutines.flow.onEach
 import utils.AppEnvironment
 
 @KordPreview
@@ -68,11 +56,6 @@ class MainBot(
     private val minecraftPattern = Regex("^${minecraftDispatcher.getPrefix()}.*", RegexOption.DOT_MATCHES_ALL)
 
     override suspend fun attach() {
-        client.on<MemberLeaveEvent> {
-            if (user.id.value == client.selfId.value) {
-                guildsManager.removeGuild(guildId.asString)
-            }
-        }
         client.on<GuildDeleteEvent> {
             guildsManager.removeGuild(guildId.asString)
         }
@@ -136,7 +119,7 @@ class MainBot(
 
         if (AppEnvironment.isTestEnv()) {
             println("Slash commands")
-            createSlashCommands()
+//            createSlashCommands()
         }
     }
 
@@ -149,7 +132,8 @@ class MainBot(
 
     suspend fun checkGuilds() {
         val guilds = getAllGuilds()
-        guildsManager.removeGuildsIgnore(guilds.map { it.id.asString })
+        println(guilds.map { it.name })
+        guildsManager.syncGuilds(guilds.map { it.id.asString })
     }
 
     private suspend fun getAllGuilds(): List<DiscordPartialGuild> {

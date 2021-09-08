@@ -1,16 +1,24 @@
 package db
 
+import kotlinx.coroutines.Dispatchers
 import org.jetbrains.exposed.sql.*
+import org.jetbrains.exposed.sql.transactions.experimental.suspendedTransactionAsync
 import org.jetbrains.exposed.sql.transactions.transaction
 
 class GuildsManager(
     private val database: Database
 ) {
 
-    fun removeGuildsIgnore(ids: List<String>) {
-        return transaction(database) {
-            Guilds.deleteWhere { Guilds.id notInList ids }
-        }
+    suspend fun syncGuilds(ids: List<String>) {
+        suspendedTransactionAsync(Dispatchers.IO, database) {
+            val saved = Guilds.selectAll().map { it[Guilds.id] }
+            (ids - saved).forEach { guild ->
+                Guilds.insert {
+                    it[id] = guild
+                }
+            }
+            Guilds.deleteWhere { Guilds.id inList (saved - ids) }
+        }.await()
     }
 
     fun removeGuild(id: String) {
