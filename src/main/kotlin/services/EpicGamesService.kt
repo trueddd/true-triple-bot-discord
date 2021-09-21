@@ -24,19 +24,25 @@ class EpicGamesService(database: Database) : BaseGamesService<GiveAwayGame>(data
             println("Loading games from network")
             val response = client.get<FreeGamesResponse>(baseUrl)
             val elements = response.data.catalog.searchStore.elements
-            elements.mapNotNull { element ->
-                val dates = element.promotions?.current?.firstOrNull()?.offers?.firstOrNull()
-                    ?.let { it.startDate.egsDate() to it.endDate.egsDate() }
-                    ?: element.promotions?.upcoming?.firstOrNull()?.offers?.minByOrNull { item -> item.startDate }
-                        ?.let { it.startDate.egsDate() to it.endDate.egsDate() } ?: return@mapNotNull null
-                GiveAwayGame(
-                    element.id,
-                    element.title,
-                    dates.let { OfferDates(it.first.toLocalDateTime(), it.second.toLocalDateTime()) },
-                    LocalDateTime.now(),
-                    element.productSlug
-                )
-            }
+            elements
+                .mapNotNull { element ->
+                    val dates = element.promotions?.current?.firstOrNull()?.offers
+                        ?.firstOrNull { it.discountSetting.discountPercentage == 0 }
+                        ?.let { it.startDate.egsDate() to it.endDate.egsDate() }
+                        ?: element.promotions?.upcoming?.firstOrNull()?.offers
+                            ?.minByOrNull { item -> item.startDate }
+                            ?.let { if (it.discountSetting.discountPercentage == 0) it else null }
+                            ?.let { it.startDate.egsDate() to it.endDate.egsDate() }
+                        ?: return@mapNotNull null
+                    GiveAwayGame(
+                        element.id,
+                        element.title,
+                        dates.let { OfferDates(it.first.toLocalDateTime(), it.second.toLocalDateTime()) },
+                        LocalDateTime.now(),
+                        element.productSlug
+                    )
+                }
+                .sortedBy { it.promotion?.start }
         } catch (e: Exception) {
             e.printStackTrace()
             null
