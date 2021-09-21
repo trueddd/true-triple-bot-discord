@@ -25,7 +25,7 @@ class Scheduler(
         Job() + Dispatchers.Default
     }
 
-    private val gamesDispatcher = GamesDispatcher(guildsManager, epicGamesService, steamGamesService, gogGamesService, crackedGamesService, client)
+    private val gamesDispatcher = GamesDispatcher(guildsManager, client)
 
     fun scheduleGog() {
         // schedule GOG notifications
@@ -57,6 +57,9 @@ class Scheduler(
                 val steamGames = steamGamesService.load(gamesGuildsAndChannels.map { it.region }.distinct())
                 gamesGuildsAndChannels.forEach {
                     val steamGamesForRegion = steamGames?.get(it.region)
+                    if (steamGamesForRegion.isNullOrEmpty()) {
+                        return@forEach
+                    }
                     try {
                         gamesDispatcher.showSteamGames(Snowflake(it.channelId), steamGamesForRegion)
                     } catch (e: Exception) {
@@ -77,6 +80,9 @@ class Scheduler(
                 val egsGames = epicGamesService.load(gamesGuildsAndChannels.map { it.region }.distinct())
                 gamesGuildsAndChannels.forEach {
                     val egsGamesForRegion = egsGames?.get(it.region)
+                    if (egsGamesForRegion.isNullOrEmpty()) {
+                        return@forEach
+                    }
                     try {
                         gamesDispatcher.showEgsGames(Snowflake(it.channelId), egsGamesForRegion)
                     } catch (e: Exception) {

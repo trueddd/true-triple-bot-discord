@@ -8,14 +8,17 @@ import dev.kord.common.entity.Snowflake
 import dev.kord.core.Kord
 import dev.kord.core.event.gateway.ReadyEvent
 import dev.kord.core.event.guild.GuildDeleteEvent
+import dev.kord.core.event.interaction.InteractionCreateEvent
 import dev.kord.core.event.message.MessageCreateEvent
 import dev.kord.core.event.message.MessageDeleteEvent
 import dev.kord.core.event.message.ReactionAddEvent
 import dev.kord.core.event.message.ReactionRemoveEvent
 import dev.kord.core.on
+import dev.kord.rest.builder.interaction.subCommand
 import dev.kord.rest.route.Position
 import dispatchers.*
 import utils.AppEnvironment
+import utils.Commands
 
 @KordPreview
 class MainBot(
@@ -30,7 +33,7 @@ class MainBot(
 
     private val moviesDispatcher = MoviesDispatcher(guildsManager, client)
 
-    private val gamesDispatcher = GamesDispatcher(guildsManager, epicGamesService, steamGamesService, gogGamesService, crackedGamesService, client)
+    private val gamesDispatcher = GamesDispatcher(guildsManager, client)
 
     private val commonDispatcher = CommonDispatcher(guildsManager, client)
 
@@ -91,22 +94,41 @@ class MainBot(
             }
             dispatcher.onMessageCreate(this, trimmedMessage)
         }
-//        client.on<InteractionCreateEvent> {
-//            kord.rest.interaction.createInteractionResponse(
-//                interaction.id,
-//                interaction.token,
-//                InteractionResponseCreateRequest(
-//                    InteractionResponseType.ChannelMessageWithSource,
-//                    Optional.Value(
-//                        InteractionApplicationCommandCallbackData(
-//                            content = Optional.Value(
-//                                "Hello :)"
-//                            )
-//                        )
-//                    )
-//                )
-//            )
-//        }
+        client.on<InteractionCreateEvent> {
+            println("id: ${interaction.data.data.id.value}; name: ${interaction.data.data.name.value}; values: ${interaction.data.data.values.value}; options: ${interaction.data.data.options.value}")
+            when (interaction.data.data.name.value) {
+                "games" -> {
+                    val subCommand = interaction.data.data.options.value?.firstOrNull()?.name
+                    val region = guildsManager.getGuildRegion(interaction.data.guildId.value!!.asString) ?: "ru"
+                    when (subCommand) {
+                        Commands.Games.EGS -> {
+                            val games = epicGamesService.load(listOf(region))?.get(region)
+                            if (games != null) {
+                                gamesDispatcher.showEgsGames(interaction, games)
+                            } else {
+                                gamesDispatcher.postErrorMessage(interaction, "Игры не раздают")
+                            }
+                        }
+                        Commands.Games.GOG -> {
+                            val games = gogGamesService.load(listOf(region))?.get(region)
+                            if (games != null) {
+                                gamesDispatcher.showGogGames(interaction, games)
+                            } else {
+                                gamesDispatcher.postErrorMessage(interaction, "Не получилось со GOG'ом")
+                            }
+                        }
+                        Commands.Games.STEAM -> {
+                            val games = steamGamesService.load(listOf(region))?.get(region)
+                            if (games != null) {
+                                gamesDispatcher.showSteamGames(interaction, games)
+                            } else {
+                                gamesDispatcher.postErrorMessage(interaction, "Не получилось со Steam\'ом")
+                            }
+                        }
+                    }
+                }
+            }
+        }
 
         if (AppEnvironment.isProdEnv()) {
             client.on<ReadyEvent> {
@@ -119,15 +141,16 @@ class MainBot(
 
         if (AppEnvironment.isTestEnv()) {
             println("Slash commands")
-//            createSlashCommands()
+            createSlashCommands()
         }
     }
 
     private suspend fun createSlashCommands() {
-//        client.on<InteractionCreateEvent> {
-//            println("Interaction: ${this.interaction.command}")
-//        }
-        client.createGuildChatInputCommand(Snowflake("884176842783879189"), "test", "description")
+        client.createGuildChatInputCommand(Snowflake("884176842783879189"), "games", "Games related commands") {
+            subCommand("egs", "List all free games promotions from EGS")
+            subCommand("steam", "List top selling games from Steam")
+            subCommand("gog", "List currently the most popular games from GOG with discounts")
+        }
     }
 
     suspend fun checkGuilds() {

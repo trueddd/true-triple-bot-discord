@@ -2,12 +2,17 @@ package dispatchers
 
 import dev.kord.common.Color
 import dev.kord.common.entity.DiscordUser
+import dev.kord.common.entity.InteractionResponseType
 import dev.kord.common.entity.Snowflake
+import dev.kord.common.entity.optional.Optional
+import dev.kord.common.entity.optional.optional
 import dev.kord.core.Kord
 import dev.kord.core.behavior.channel.MessageChannelBehavior
 import dev.kord.core.entity.Message
 import dev.kord.core.entity.ReactionEmoji
+import dev.kord.core.entity.interaction.Interaction
 import dev.kord.rest.builder.message.create.embed
+import dev.kord.rest.json.request.*
 import utils.AppEnvironment
 
 abstract class BaseDispatcher(protected val client: Kord) {
@@ -36,6 +41,34 @@ abstract class BaseDispatcher(protected val client: Kord) {
 
     suspend fun postMessage(channel: MessageChannelBehavior, message: String, messageColor: Color = magentaColor) {
         postMessage(channel.id, message, messageColor)
+    }
+
+    protected suspend fun createEmbedResponse(integration: Interaction, embedRequest: EmbedRequest) {
+        client.rest.interaction.createInteractionResponse(
+            integration.id,
+            integration.token,
+            InteractionResponseCreateRequest(
+                InteractionResponseType.ChannelMessageWithSource,
+                Optional.Value(
+                    InteractionApplicationCommandCallbackData(
+                        embeds = Optional.Value(listOf(embedRequest))
+                    )
+                )
+            )
+        )
+    }
+
+    suspend fun postErrorMessage(integration: Interaction, message: String) {
+        createEmbedResponse(
+            integration,
+            EmbedRequest(
+                color = magentaColor.optional(),
+                author = EmbedAuthorRequest(
+                    name = message.optional(),
+                    iconUrl = "https://cdn.discordapp.com/emojis/722871552290455563.png?v=1".optional(),
+                ).optional(),
+            )
+        )
     }
 
     suspend fun postErrorMessage(channelId: Snowflake, message: String, messageColor: Color = magentaColor) {
