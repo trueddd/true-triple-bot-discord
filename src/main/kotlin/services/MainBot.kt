@@ -14,11 +14,11 @@ import dev.kord.core.event.message.MessageDeleteEvent
 import dev.kord.core.event.message.ReactionAddEvent
 import dev.kord.core.event.message.ReactionRemoveEvent
 import dev.kord.core.on
+import dev.kord.rest.builder.interaction.channel
 import dev.kord.rest.builder.interaction.subCommand
 import dev.kord.rest.route.Position
 import dispatchers.*
 import utils.AppEnvironment
-import utils.Commands
 
 @KordPreview
 class MainBot(
@@ -33,7 +33,13 @@ class MainBot(
 
     private val moviesDispatcher = MoviesDispatcher(guildsManager, client)
 
-    private val gamesDispatcher = GamesDispatcher(guildsManager, client)
+    private val gamesDispatcher = GamesDispatcher(
+        guildsManager,
+        epicGamesService,
+        steamGamesService,
+        gogGamesService,
+        client,
+    )
 
     private val commonDispatcher = CommonDispatcher(guildsManager, client)
 
@@ -54,7 +60,6 @@ class MainBot(
     }
 
     private val botPrefixPattern = Regex("^${AppEnvironment.BOT_PREFIX}.*", RegexOption.DOT_MATCHES_ALL)
-    private val gamesPattern = Regex("^${gamesDispatcher.getPrefix()}.*", RegexOption.DOT_MATCHES_ALL)
     private val moviesPattern = Regex("^${moviesDispatcher.getPrefix()}.*", RegexOption.DOT_MATCHES_ALL)
     private val minecraftPattern = Regex("^${minecraftDispatcher.getPrefix()}.*", RegexOption.DOT_MATCHES_ALL)
 
@@ -79,10 +84,8 @@ class MainBot(
             if (!message.content.matches(botPrefixPattern)) {
                 return@on
             }
-            println("Message: ${message.content}. From ${message.getGuild().id.asString}")
             val messageText = message.content.removePrefix(AppEnvironment.BOT_PREFIX)
             val dispatcher = when {
-                gamesPattern.matches(messageText) -> gamesDispatcher
                 moviesPattern.matches(messageText) -> moviesDispatcher
                 minecraftPattern.matches(messageText) -> minecraftDispatcher
                 else -> commonDispatcher
@@ -97,36 +100,7 @@ class MainBot(
         client.on<InteractionCreateEvent> {
             println("id: ${interaction.data.data.id.value}; name: ${interaction.data.data.name.value}; values: ${interaction.data.data.values.value}; options: ${interaction.data.data.options.value}")
             when (interaction.data.data.name.value) {
-                "games" -> {
-                    val subCommand = interaction.data.data.options.value?.firstOrNull()?.name
-                    val region = guildsManager.getGuildRegion(interaction.data.guildId.value!!.asString) ?: "ru"
-                    when (subCommand) {
-                        Commands.Games.EGS -> {
-                            val games = epicGamesService.load(listOf(region))?.get(region)
-                            if (games != null) {
-                                gamesDispatcher.showEgsGames(interaction, games)
-                            } else {
-                                gamesDispatcher.postErrorMessage(interaction, "Игры не раздают")
-                            }
-                        }
-                        Commands.Games.GOG -> {
-                            val games = gogGamesService.load(listOf(region))?.get(region)
-                            if (games != null) {
-                                gamesDispatcher.showGogGames(interaction, games)
-                            } else {
-                                gamesDispatcher.postErrorMessage(interaction, "Не получилось со GOG'ом")
-                            }
-                        }
-                        Commands.Games.STEAM -> {
-                            val games = steamGamesService.load(listOf(region))?.get(region)
-                            if (games != null) {
-                                gamesDispatcher.showSteamGames(interaction, games)
-                            } else {
-                                gamesDispatcher.postErrorMessage(interaction, "Не получилось со Steam\'ом")
-                            }
-                        }
-                    }
-                }
+                "games" -> gamesDispatcher.onInteractionReceived(interaction)
             }
         }
 
@@ -150,6 +124,12 @@ class MainBot(
             subCommand("egs", "List all free games promotions from EGS")
             subCommand("steam", "List top selling games from Steam")
             subCommand("gog", "List currently the most popular games from GOG with discounts")
+            subCommand("set", "Schedule game notifications in selected channel") {
+                channel("channel", "Channel where to send game notifications") {
+                    required = true
+                }
+            }
+            subCommand("unset", "Cancel game notifications")
         }
     }
 

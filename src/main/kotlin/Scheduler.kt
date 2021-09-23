@@ -25,7 +25,13 @@ class Scheduler(
         Job() + Dispatchers.Default
     }
 
-    private val gamesDispatcher = GamesDispatcher(guildsManager, client)
+    private val gamesDispatcher = GamesDispatcher(
+        guildsManager,
+        epicGamesService,
+        steamGamesService,
+        gogGamesService,
+        client,
+    )
 
     fun scheduleGog() {
         // schedule GOG notifications

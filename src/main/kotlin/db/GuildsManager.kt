@@ -12,12 +12,12 @@ class GuildsManager(
     suspend fun syncGuilds(ids: List<String>) {
         suspendedTransactionAsync(Dispatchers.IO, database) {
             val saved = Guilds.selectAll().map { it[Guilds.id] }
+            Guilds.deleteWhere { Guilds.id inList (saved - ids) }
             (ids - saved).forEach { guild ->
                 Guilds.insert {
                     it[id] = guild
                 }
             }
-            Guilds.deleteWhere { Guilds.id inList (saved - ids) }
         }.await()
     }
 

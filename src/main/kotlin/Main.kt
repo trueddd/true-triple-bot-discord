@@ -1,8 +1,10 @@
 import db.GuildsManager
+import dev.kord.common.annotation.KordPreview
 import dev.kord.core.Kord
 import io.ktor.application.Application
 import io.ktor.server.engine.embeddedServer
 import io.ktor.server.netty.Netty
+import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import services.*
@@ -14,6 +16,7 @@ fun main(args: Array<String>) {
     embeddedServer(Netty, port = AppEnvironment.getPort(), module = Application::module).start(wait = true)
 }
 
+@OptIn(KordPreview::class, DelicateCoroutinesApi::class)
 fun Application.module() {
 
     val database = provideDatabase()

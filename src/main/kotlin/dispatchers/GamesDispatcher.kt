@@ -6,100 +6,139 @@ import data.gog.Product
 import data.steam.SteamGame
 import db.GuildsManager
 import dev.kord.common.Color
+import dev.kord.common.entity.ChannelType
+import dev.kord.common.entity.CommandArgument
 import dev.kord.common.entity.Snowflake
 import dev.kord.common.entity.optional.optional
 import dev.kord.core.Kord
-import dev.kord.core.behavior.channel.MessageChannelBehavior
-import dev.kord.core.behavior.channel.createEmbed
 import dev.kord.core.entity.interaction.Interaction
-import dev.kord.core.event.message.MessageCreateEvent
 import dev.kord.rest.builder.message.create.embed
 import dev.kord.rest.json.request.*
 import io.ktor.util.*
+import services.EpicGamesService
+import services.GogGamesService
+import services.SteamGamesService
 import utils.Commands
-import utils.commandRegex
-import utils.isSentByAdmin
+import utils.issuedByAdmin
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.util.*
 
 class GamesDispatcher(
     private val guildsManager: GuildsManager,
-    client: Kord
-) : BaseDispatcher(client),
-    MessageCreateListener
-{
+    private val epicGamesService: EpicGamesService,
+    private val steamGamesService: SteamGamesService,
+    private val gogGamesService: GogGamesService,
+    client: Kord,
+) : BaseDispatcher(client), InteractionListener {
 
     override val dispatcherPrefix: String
         get() = "games"
 
-    override fun getPrefix(): String {
-        return dispatcherPrefix
+    override suspend fun onInteractionReceived(interaction: Interaction) {
+        val subCommand = interaction.data.data.options.value?.firstOrNull()?.name
+        val region = guildsManager.getGuildRegion(interaction.data.guildId.value!!.asString) ?: "ru"
+        when (subCommand) {
+            Commands.Games.EGS -> {
+                val games = epicGamesService.load(listOf(region))?.get(region)
+                if (games != null) {
+                    createEmbedResponse(interaction, buildEgsGamesEmbed(games))
+                } else {
+                    postErrorMessage(interaction, "Игры не раздают")
+                }
+            }
+            Commands.Games.GOG -> {
+                val games = gogGamesService.load(listOf(region))?.get(region)
+                if (games != null) {
+                    createEmbedResponse(interaction, buildGogGamesEmbed(games))
+                } else {
+                    postErrorMessage(interaction, "Не получилось со GOG'ом")
+                }
+            }
+            Commands.Games.STEAM -> {
+                val games = steamGamesService.load(listOf(region))?.get(region)
+                if (games != null) {
+                    createEmbedResponse(interaction, buildSteamGamesEmbed(games))
+                } else {
+                    postErrorMessage(interaction, "Не получилось со Steam\'ом")
+                }
+            }
+            Commands.Games.SET -> setGamesChannel(interaction)
+            Commands.Games.UNSET -> unsetGamesChannel(interaction)
+        }
     }
 
-    private val help = Commands.Games.HELP.commandRegex()
-    private val set = Commands.Games.SET.commandRegex()
-    private val unset = Commands.Games.UNSET.commandRegex()
-
-    override suspend fun onMessageCreate(event: MessageCreateEvent, trimmedMessage: String) {
-        val guildId = event.message.getGuild().id.asString
-        val channelId = event.message.channelId
+    private suspend fun unsetGamesChannel(interaction: Interaction) {
+        if (!interaction.issuedByAdmin) {
+            createTextResponse(
+                interaction,
+                "You are not allowed to use this command.",
+                onlyForUser = true,
+            )
+            return
+        }
         when {
-            help.matches(trimmedMessage) -> {
-                showHelp(event.message.channel)
+            guildsManager.setGamesChannel(interaction.data.guildId.value!!.asString, null) -> {
+                createTextResponse(
+                    interaction,
+                    "Successfully cancelled games notifications",
+                    onlyForUser = true,
+                )
             }
-            set.matches(trimmedMessage) -> {
-                if (!event.isSentByAdmin()) {
-                    respondWithReaction(event.message, false)
-                    return
-                }
-                val changed = guildsManager.setGamesChannel(guildId, channelId.asString)
-                respondWithReaction(event.message, changed)
-            }
-            unset.matches(trimmedMessage) -> {
-                if (!event.isSentByAdmin()) {
-                    respondWithReaction(event.message, false)
-                    return
-                }
-                val changed = guildsManager.setGamesChannel(guildId, null)
-                respondWithReaction(event.message, changed)
-            }
+            else -> createTextResponse(
+                interaction,
+                "Error occurred while cancelling game notifications",
+                onlyForUser = true,
+            )
         }
     }
 
-    suspend fun showHelp(channel: MessageChannelBehavior) {
-        channel.createEmbed {
-            color = Color(145, 71, 255)
-            field {
-                name = "Игры"
-                value = "Следующие команды отвечают за уведомления о скидках, распродажах и раздачах игр."
+    private suspend fun setGamesChannel(interaction: Interaction) {
+        if (!interaction.issuedByAdmin) {
+            createTextResponse(
+                interaction,
+                "You are not allowed to use this command.",
+                onlyForUser = true,
+            )
+            return
+        }
+        val channelId = interaction.data.data.options.value
+            ?.firstOrNull { it.name == "set" }?.values?.value
+            ?.filterIsInstance<CommandArgument.ChannelArgument>()
+            ?.firstOrNull { it.name == "channel" }?.value
+            ?: run {
+                createTextResponse(
+                    interaction,
+                    "Couldn't get channel ID.",
+                    onlyForUser = true,
+                )
+                return
             }
-            field {
-                name = getCommand(Commands.Games.SET)
-                value = "Устанавливает канал, в который была отправлена команда, как канал куда бот будет присылать уведомления."
-                inline = true
+        val channel = try {
+            client.rest.channel.getChannel(channelId)
+        } catch (e: Exception) {
+            null
+        }
+        when {
+            channel == null -> createTextResponse(interaction, "Channel not found", onlyForUser = true)
+            channel.type != ChannelType.GuildText -> createTextResponse(interaction, "You can only pass text channel", onlyForUser = true)
+            guildsManager.setGamesChannel(interaction.data.guildId.value!!.asString, channelId.asString) -> {
+                val channelName = channel.name.value ?: channelId
+                createTextResponse(
+                    interaction,
+                    "Successfully set games channel to **$channelName**",
+                    onlyForUser = true,
+                )
             }
-            field {
-                name = getCommand(Commands.Games.UNSET)
-                value = "Отменяет предыдущую команду."
-                inline = true
-            }
+            else -> createTextResponse(
+                interaction,
+                "Error occurred while setting game channel",
+                onlyForUser = true,
+            )
         }
     }
 
-    suspend fun showGogGames(interaction: Interaction, gogGames: List<Product>) {
-        createEmbedResponse(
-            interaction,
-            buildGogGamesEmbed(gogGames),
-        )
-    }
-    suspend fun showSteamGames(interaction: Interaction, elements: List<SteamGame>) {
-        createEmbedResponse(
-            interaction,
-            buildSteamGamesEmbed(elements),
-        )
-    }
-    fun buildEgsGamesEmbed(elements: List<GiveAwayGame>): EmbedRequest {
+    private fun buildEgsGamesEmbed(elements: List<GiveAwayGame>): EmbedRequest {
         val now = LocalDateTime.now()
         return EmbedRequest(
             color = Color(12, 12, 12).optional(),
@@ -129,12 +168,7 @@ class GamesDispatcher(
             }.optional()
         )
     }
-    suspend fun showEgsGames(interaction: Interaction, elements: List<GiveAwayGame>) {
-        createEmbedResponse(
-            interaction,
-            buildEgsGamesEmbed(elements),
-        )
-    }
+
     suspend fun showEgsGames(channelId: Snowflake, elements: List<GiveAwayGame>) {
         client.rest.channel.createMessage(
             channelId,
@@ -230,21 +264,6 @@ class GamesDispatcher(
                 )
             )
         )
-    }
-
-    private suspend fun showCrackedPlaceholder(channelId: Snowflake) {
-        val messageColor = Color(237, 28, 35)
-        client.rest.channel.createMessage(channelId) {
-            embed {
-                color = messageColor
-                author {
-                    icon = "https://img7.androidappsapk.co/OurDjLyAKt2YTXvtMPQfHkQd07NmdEOpAwfqy1_cy9pxG3CX6vOu88mVh20TJa30ZdQ=s300"
-                    name = "Последние взломанные игры"
-                    url = "https://crackwatch.com/games"
-                }
-                description = "Работа сервиса crackwatch.com временно [приостановлена](https://crackwatch.com)."
-            }
-        }
     }
 
     suspend fun showCrackedGames(channelId: Snowflake, elements: List<Game>?) {

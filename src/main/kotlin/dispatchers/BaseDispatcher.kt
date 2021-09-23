@@ -1,9 +1,7 @@
 package dispatchers
 
 import dev.kord.common.Color
-import dev.kord.common.entity.DiscordUser
-import dev.kord.common.entity.InteractionResponseType
-import dev.kord.common.entity.Snowflake
+import dev.kord.common.entity.*
 import dev.kord.common.entity.optional.Optional
 import dev.kord.common.entity.optional.optional
 import dev.kord.core.Kord
@@ -43,18 +41,57 @@ abstract class BaseDispatcher(protected val client: Kord) {
         postMessage(channel.id, message, messageColor)
     }
 
-    protected suspend fun createEmbedResponse(integration: Interaction, embedRequest: EmbedRequest) {
+    protected suspend fun respondToInteraction(
+        integration: Interaction,
+        data: Optional<InteractionApplicationCommandCallbackData>,
+    ) {
         client.rest.interaction.createInteractionResponse(
             integration.id,
             integration.token,
             InteractionResponseCreateRequest(
                 InteractionResponseType.ChannelMessageWithSource,
-                Optional.Value(
-                    InteractionApplicationCommandCallbackData(
-                        embeds = Optional.Value(listOf(embedRequest))
-                    )
-                )
+                data,
             )
+        )
+    }
+
+    protected fun createFlags(
+        onlyForUser: Boolean,
+    ): MessageFlags {
+        return MessageFlags.Builder()
+            .apply {
+                if (onlyForUser) {
+                    + MessageFlag.Ephemeral
+                }
+            }
+            .flags()
+    }
+
+    protected suspend fun createTextResponse(
+        integration: Interaction,
+        content: String,
+        onlyForUser: Boolean = false,
+    ) {
+        respondToInteraction(
+            integration,
+            InteractionApplicationCommandCallbackData(
+                content = content.optional(),
+                flags = createFlags(onlyForUser).optional(),
+            ).optional(),
+        )
+    }
+
+    protected suspend fun createEmbedResponse(
+        integration: Interaction,
+        embedRequest: EmbedRequest,
+        onlyForUser: Boolean = false,
+    ) {
+        respondToInteraction(
+            integration,
+            InteractionApplicationCommandCallbackData(
+                embeds = listOf(embedRequest).optional(),
+                flags = createFlags(onlyForUser).optional(),
+            ).optional(),
         )
     }
 

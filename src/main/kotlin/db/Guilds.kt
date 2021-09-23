@@ -1,6 +1,7 @@
 package db
 
 import org.jetbrains.exposed.sql.Table
+import utils.environmentDependentTableName
 
 object Guilds : Table() {
     val id = varchar("id", 64)
@@ -12,7 +13,9 @@ object Guilds : Table() {
     val moviesRoleId = varchar("movie_role_id", 64).nullable()
     val minecraftServerIp = varchar("minecraft_server_ip", 64).nullable()
 
-    override val tableName: String = "guilds"
+    private const val NAME = "guilds"
 
-    override val primaryKey = PrimaryKey(id, name = "guilds_pk")
+    override val tableName: String = NAME.environmentDependentTableName()
+
+    override val primaryKey = PrimaryKey(id, name = "${tableName}_pk")
 }
