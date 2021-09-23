@@ -2,20 +2,28 @@ package dispatchers
 
 import db.GuildsManager
 import dev.kord.common.Color
+import dev.kord.common.entity.ButtonStyle
+import dev.kord.common.entity.CommandArgument
+import dev.kord.common.entity.ComponentType
+import dev.kord.common.entity.DiscordComponent
+import dev.kord.common.entity.optional.Optional
+import dev.kord.common.entity.optional.optional
 import dev.kord.core.Kord
-import dev.kord.core.entity.Message
+import dev.kord.core.entity.interaction.Interaction
 import dev.kord.core.event.message.MessageCreateEvent
-import dev.kord.rest.builder.message.create.embed
+import dev.kord.rest.json.request.EmbedAuthorRequest
+import dev.kord.rest.json.request.EmbedImageRequest
+import dev.kord.rest.json.request.EmbedRequest
 import utils.Commands
-import utils.commandRegex
 import utils.isSentByAdmin
+import utils.issuedByAdmin
 import utils.replaceIfMatches
 import java.net.URL
 
 class CommonDispatcher(
     private val guildsManager: GuildsManager,
-    client: Kord
-) : BaseDispatcher(client), MessageCreateListener {
+    client: Kord,
+) : BaseDispatcher(client), MessageCreateListener, InteractionListener {
 
     override val dispatcherPrefix: String
         get() = ""
@@ -24,23 +32,18 @@ class CommonDispatcher(
         return dispatcherPrefix
     }
 
-    private val pick = Commands.Common.PICK.commandRegex(false, RegexOption.DOT_MATCHES_ALL)
-    private val locale = Commands.Common.LOCALE.commandRegex(singleWordCommand = false)
     private val roleSet = Regex("^${Commands.Common.ROLE_GETTER}\\s+<@&(\\d+)>\\s+<:(.+):\\d+>.*$")
-    private val poll = Commands.Common.POLL.commandRegex(false, RegexOption.DOT_MATCHES_ALL)
+
+    override suspend fun onInteractionReceived(interaction: Interaction) {
+        val command = interaction.data.data.name.value
+        when (command) {
+            Commands.Common.LOCALE -> setLocale(interaction)
+            Commands.Common.POLL -> createPoll(interaction)
+        }
+    }
 
     override suspend fun onMessageCreate(event: MessageCreateEvent, trimmedMessage: String) {
         when {
-            pick.matches(trimmedMessage) -> {
-                pickRandom(trimmedMessage.removePrefix(Commands.Common.PICK).trim(), event.message)
-            }
-            locale.matches(trimmedMessage) -> {
-                if (!event.isSentByAdmin()) {
-                    respondWithReaction(event.message, false)
-                    return
-                }
-                setLocale(trimmedMessage.removePrefix(Commands.Common.LOCALE).trim(), event.message)
-            }
             roleSet.matches(trimmedMessage) -> {
                 if (!event.isSentByAdmin()) {
                     respondWithReaction(event.message, false)
@@ -53,26 +56,6 @@ class CommonDispatcher(
                 } else false
                 respondWithReaction(event.message, success)
             }
-            poll.matches(trimmedMessage) -> {
-                createPoll(trimmedMessage.removePrefix(Commands.Common.POLL).trim(), event.message)
-            }
-        }
-    }
-
-    private suspend fun pickRandom(messageText: String, message: Message) {
-        println(messageText)
-        val options = messageText
-            .split("\n")
-            .mapNotNull { if (it.isEmpty()) null else it }
-        if (options.isEmpty()) {
-            respondWithReaction(message, false)
-            return
-        } else {
-            val chosen = options.randomOrNull() ?: run {
-                respondWithReaction(message, false)
-                return
-            }
-            postMessage(message.channel, chosen, Color(250, 200, 0))
         }
     }
 
@@ -85,33 +68,78 @@ class CommonDispatcher(
         }
     }
 
-    private val imageRegex = Regex("-link (?<link>\\S*)", RegexOption.DOT_MATCHES_ALL)
-
-    private suspend fun createPoll(messageText: String, message: Message) {
-        val urlText = imageRegex.find(messageText)?.groups?.get("link")?.value?.let { if (it.isUrl()) it else null }
-        val text = if (urlText == null) messageText else messageText.replace(imageRegex, "")
-        val newMessage = client.rest.channel.createMessage(message.channelId) {
-            embed {
-                message.author?.let {
-                    author {
-                        icon = it.avatar.url
-                        name = it.username
-                    }
-                }
-                urlText?.let {
-                    image = it
-                }
-                description = text
-                color = Color(185, 185, 0)
+    private suspend fun createPoll(interaction: Interaction) {
+        val text = interaction.data.data.options.value
+            ?.firstOrNull { it.name == "text" }?.value?.value
+            ?.let { it as? CommandArgument.StringArgument }?.value
+            ?: run {
+                createTextResponse(interaction, "Error occurred while creating poll", onlyForUser = true)
+                return
             }
-        }
-        client.rest.channel.createReaction(newMessage.channelId, newMessage.id, "\uD83D\uDC4D")
-        client.rest.channel.createReaction(newMessage.channelId, newMessage.id, "\uD83D\uDC4E")
-        message.delete()
+        val link = interaction.data.data.options.value
+            ?.firstOrNull { it.name == "url" }?.value?.value
+            ?.let { it as? CommandArgument.StringArgument }?.value
+            ?.let { if (it.isUrl()) it else null }
+        val options = interaction.data.data.options.value
+            ?.firstOrNull { it.name == "options" }?.value?.value
+            ?.let { it as? CommandArgument.IntegerArgument }?.value ?: 2
+        val author = interaction.user.asUser()
+
+        // todo: make a followup message
+        createEmbedResponse(
+            interaction,
+            EmbedRequest(
+                author = EmbedAuthorRequest(
+                    iconUrl = author.avatar.url.optional(),
+                    name = author.username.optional(),
+                ).optional(),
+                color = Color(185, 185, 0).optional(),
+                description = text.optional(),
+                image = link?.let { EmbedImageRequest(it) }?.optional() ?: Optional.Missing(),
+            ),
+            components = (1..options).map {
+                DiscordComponent(
+                    ComponentType.Button,
+                    style = ButtonStyle.Primary.optional(),
+                    label = "$it".optional(),
+                    customId = "$it".optional(),
+                )
+            }
+        )
+//        client.rest.channel.createReaction(newMessage.channelId, newMessage.id, "\uD83D\uDC4D")
+//        client.rest.channel.createReaction(newMessage.channelId, newMessage.id, "\uD83D\uDC4E")
+//        message.delete()
     }
 
-    private suspend fun setLocale(localeString: String, message: Message) {
-        val success = guildsManager.setGuildRegion(message.getGuild().id.asString, localeString)
-        respondWithReaction(message, success)
+    private suspend fun setLocale(interaction: Interaction) {
+        if (!interaction.issuedByAdmin) {
+            createTextResponse(
+                interaction,
+                "You are not allowed to use this command.",
+                onlyForUser = true,
+            )
+            return
+        }
+        val region = interaction.data.data.options.value
+            ?.also { println("options: $it") }
+            ?.firstOrNull { it.name == "region" }
+            ?.value?.value
+            ?.let { it as? CommandArgument.StringArgument }?.value
+        when {
+            guildsManager.setGuildRegion(interaction.data.guildId.value!!.asString, region) -> {
+                createTextResponse(
+                    interaction,
+                    "Guild region was set to **$region**",
+                    onlyForUser = true,
+                )
+            }
+            else -> {
+                createTextResponse(
+                    interaction,
+                    "Error occurred while setting guild locale.",
+                    onlyForUser = true,
+                )
+            }
+        }
     }
 }

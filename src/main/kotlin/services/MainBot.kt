@@ -3,6 +3,7 @@ package services
 import Scheduler
 import db.GuildsManager
 import dev.kord.common.annotation.KordPreview
+import dev.kord.common.entity.Choice
 import dev.kord.common.entity.DiscordPartialGuild
 import dev.kord.common.entity.Snowflake
 import dev.kord.core.Kord
@@ -14,11 +15,12 @@ import dev.kord.core.event.message.MessageDeleteEvent
 import dev.kord.core.event.message.ReactionAddEvent
 import dev.kord.core.event.message.ReactionRemoveEvent
 import dev.kord.core.on
-import dev.kord.rest.builder.interaction.channel
-import dev.kord.rest.builder.interaction.subCommand
+import dev.kord.rest.builder.interaction.*
 import dev.kord.rest.route.Position
 import dispatchers.*
+import kotlinx.coroutines.flow.toList
 import utils.AppEnvironment
+import utils.Commands
 
 @KordPreview
 class MainBot(
@@ -84,6 +86,7 @@ class MainBot(
             println("id: ${interaction.data.data.id.value}; name: ${interaction.data.data.name.value}; values: ${interaction.data.data.values.value}; options: ${interaction.data.data.options.value}")
             when (interaction.data.data.name.value) {
                 "games" -> gamesDispatcher.onInteractionReceived(interaction)
+                else -> commonDispatcher.onInteractionReceived(interaction)
             }
         }
 
@@ -103,6 +106,10 @@ class MainBot(
     }
 
     private suspend fun createSlashCommands() {
+        client.globalCommands
+            .toList()
+            .joinToString { it.name }
+            .let { println("global commands: $it") }
         client.createGuildChatInputCommand(Snowflake("884176842783879189"), "games", "Games related commands") {
             subCommand("egs", "List all free games promotions from EGS")
             subCommand("steam", "List top selling games from Steam")
@@ -113,6 +120,31 @@ class MainBot(
                 }
             }
             subCommand("unset", "Cancel game notifications")
+        }
+        client.createGuildChatInputCommand(
+            Snowflake("884176842783879189"),
+            Commands.Common.LOCALE,
+            "Sets guild locale to help bot send game notifications with proper currency prices"
+        ) {
+            string("region", "Region abbreviation (e.g. `ru`, `ua` or `en`). For more info, check this standard ISO 639.") {
+                required = true
+            }
+        }
+        client.createGuildChatInputCommand(
+            Snowflake("884176842783879189"),
+            Commands.Common.POLL,
+            "Create a poll"
+        ) {
+            string("text", "Poll subject") {
+                required = true
+            }
+            int("options", "Amount of options in poll. Max is 10.") {
+                required = false
+                choices = (2..10).map { Choice.IntChoice("$it options", it) }.toMutableList()
+            }
+            string("url", "URL of picture that will be attached to poll") {
+                required = false
+            }
         }
     }
 

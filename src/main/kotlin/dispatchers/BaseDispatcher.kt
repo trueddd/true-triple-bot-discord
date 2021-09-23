@@ -1,16 +1,16 @@
 package dispatchers
 
 import dev.kord.common.Color
-import dev.kord.common.entity.InteractionResponseType
-import dev.kord.common.entity.MessageFlag
-import dev.kord.common.entity.MessageFlags
-import dev.kord.common.entity.Snowflake
+import dev.kord.common.entity.*
 import dev.kord.common.entity.optional.Optional
 import dev.kord.common.entity.optional.optional
 import dev.kord.core.Kord
 import dev.kord.core.behavior.channel.MessageChannelBehavior
+import dev.kord.core.cache.data.ComponentData
 import dev.kord.core.entity.Message
 import dev.kord.core.entity.ReactionEmoji
+import dev.kord.core.entity.component.ActionRowComponent
+import dev.kord.core.entity.component.Component
 import dev.kord.core.entity.interaction.Interaction
 import dev.kord.rest.builder.message.create.embed
 import dev.kord.rest.json.request.EmbedAuthorRequest
@@ -89,6 +89,7 @@ abstract class BaseDispatcher(protected val client: Kord) {
     protected suspend fun createEmbedResponse(
         integration: Interaction,
         embedRequest: EmbedRequest,
+        components: List<DiscordComponent>? = null,
         onlyForUser: Boolean = false,
     ) {
         respondToInteraction(
@@ -96,6 +97,14 @@ abstract class BaseDispatcher(protected val client: Kord) {
             InteractionApplicationCommandCallbackData(
                 embeds = listOf(embedRequest).optional(),
                 flags = createFlags(onlyForUser).optional(),
+                components = components?.let { elements ->
+                    listOf(
+                        DiscordComponent(
+                            ComponentType.ActionRow,
+                            components = elements.optional()
+                        )
+                    ).optional()
+                } ?: Optional.Missing(),
             ).optional(),
         )
     }

@@ -37,9 +37,9 @@ class GamesDispatcher(
 
     override suspend fun onInteractionReceived(interaction: Interaction) {
         val subCommand = interaction.data.data.options.value?.firstOrNull()?.name
-        val region = guildsManager.getGuildRegion(interaction.data.guildId.value!!.asString) ?: "ru"
         when (subCommand) {
             Commands.Games.EGS -> {
+                val region = guildsManager.getGuildRegion(interaction.data.guildId.value!!.asString) ?: "ru"
                 val games = epicGamesService.load(listOf(region))?.get(region)
                 if (games != null) {
                     createEmbedResponse(interaction, buildEgsGamesEmbed(games))
@@ -48,6 +48,7 @@ class GamesDispatcher(
                 }
             }
             Commands.Games.GOG -> {
+                val region = guildsManager.getGuildRegion(interaction.data.guildId.value!!.asString) ?: "ru"
                 val games = gogGamesService.load(listOf(region))?.get(region)
                 if (games != null) {
                     createEmbedResponse(interaction, buildGogGamesEmbed(games))
@@ -56,6 +57,7 @@ class GamesDispatcher(
                 }
             }
             Commands.Games.STEAM -> {
+                val region = guildsManager.getGuildRegion(interaction.data.guildId.value!!.asString) ?: "ru"
                 val games = steamGamesService.load(listOf(region))?.get(region)
                 if (games != null) {
                     createEmbedResponse(interaction, buildSteamGamesEmbed(games))

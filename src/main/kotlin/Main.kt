@@ -33,7 +33,7 @@ fun Application.module() {
         bot.attach()
 
         client.login {
-            listening("slash commands :sunglasses:")
+            listening("slash commands \uD83D\uDE0E")
         }
     }
 }

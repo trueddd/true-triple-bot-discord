@@ -10,7 +10,6 @@ object Commands {
         const val CRACKED = "cracked"
     }
     object Common {
-        const val PICK = "pick"
         const val LOCALE = "locale"
         const val ROLE_GETTER = "role-get"
         const val POLL = "poll"
