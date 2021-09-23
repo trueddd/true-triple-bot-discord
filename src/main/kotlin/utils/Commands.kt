@@ -31,7 +31,4 @@ object Commands {
         const val ROLE_GETTER = "role-get"
         const val POLL = "poll"
     }
-    object Minecraft {
-        const val SET = "set"
-    }
 }

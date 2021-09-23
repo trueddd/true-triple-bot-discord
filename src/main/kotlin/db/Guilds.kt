@@ -11,7 +11,6 @@ object Guilds : Table() {
     val region = varchar("region", 8).nullable()
     val moviesNotifyChannelId = varchar("movies_notify_channel_id", 64).nullable()
     val moviesRoleId = varchar("movie_role_id", 64).nullable()
-    val minecraftServerIp = varchar("minecraft_server_ip", 64).nullable()
 
     private const val NAME = "guilds"
 

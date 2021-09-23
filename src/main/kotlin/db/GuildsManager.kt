@@ -48,14 +48,6 @@ class GuildsManager(
         }
     }
 
-    fun getMinecraftServerIp(guildId: String): String? {
-        return getString(guildId, Guilds.minecraftServerIp)
-    }
-
-    fun setMinecraftServerIp(guildId: String, newIp: String?): Boolean {
-        return setString(guildId, Guilds.minecraftServerIp, newIp)
-    }
-
     fun setRoleGetterEmoji(messageId: String, roleId: String, emoji: String): Boolean {
         return transaction(database) {
             ReactiveRoles.insert {

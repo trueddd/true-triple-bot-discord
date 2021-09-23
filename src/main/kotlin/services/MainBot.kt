@@ -27,7 +27,6 @@ class MainBot(
     private val steamGamesService: SteamGamesService,
     private val gogGamesService: GogGamesService,
     private val crackedGamesService: CrackedGamesService,
-    minecraftService: MinecraftService,
     client: Kord
 ) : BaseBot(client) {
 
@@ -45,8 +44,6 @@ class MainBot(
 
     private val roleGetterDispatcher = RoleGetterDispatcher(guildsManager, client)
 
-    private val minecraftDispatcher = MinecraftDispatcher(guildsManager, minecraftService, client)
-
     private val addReactionListeners: Set<ReactionAddListener> by lazy {
         setOf(moviesDispatcher, roleGetterDispatcher)
     }
@@ -61,7 +58,6 @@ class MainBot(
 
     private val botPrefixPattern = Regex("^${AppEnvironment.BOT_PREFIX}.*", RegexOption.DOT_MATCHES_ALL)
     private val moviesPattern = Regex("^${moviesDispatcher.getPrefix()}.*", RegexOption.DOT_MATCHES_ALL)
-    private val minecraftPattern = Regex("^${minecraftDispatcher.getPrefix()}.*", RegexOption.DOT_MATCHES_ALL)
 
     override suspend fun attach() {
         client.on<GuildDeleteEvent> {
@@ -87,7 +83,6 @@ class MainBot(
             val messageText = message.content.removePrefix(AppEnvironment.BOT_PREFIX)
             val dispatcher = when {
                 moviesPattern.matches(messageText) -> moviesDispatcher
-                minecraftPattern.matches(messageText) -> minecraftDispatcher
                 else -> commonDispatcher
             }
             val trimmedMessage = if (dispatcher is CommonDispatcher) {
