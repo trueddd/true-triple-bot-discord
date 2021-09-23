@@ -84,22 +84,6 @@ class GuildsManager(
         }
     }
 
-    fun getMoviesListChannel(guildId: String): String? {
-        return getString(guildId, Guilds.moviesListChannelId)
-    }
-
-    fun setMoviesListChannel(guildId: String, channelId: String?): Boolean {
-        return setString(guildId, Guilds.moviesListChannelId, channelId)
-    }
-
-    fun getWatchedMoviesChannelId(guildId: String): String? {
-        return getString(guildId, Guilds.watchedMoviesChannelId)
-    }
-
-    fun setWatchedMoviesListChannel(guildId: String, channelId: String?): Boolean {
-        return setString(guildId, Guilds.watchedMoviesChannelId, channelId)
-    }
-
     fun getGamesChannelsIds(): List<GameChannel> {
         return transaction(database) {
             Guilds.selectAll().mapNotNull {
@@ -121,21 +105,5 @@ class GuildsManager(
 
     fun setGuildRegion(guildId: String, newRegion: String?): Boolean {
         return setString(guildId, Guilds.region, newRegion)
-    }
-
-    fun getMoviesNotifyChannel(guildId: String): String? {
-        return getString(guildId, Guilds.moviesNotifyChannelId)
-    }
-
-    fun setMoviesNotifyChannel(guildId: String, channelId: String?): Boolean {
-        return setString(guildId, Guilds.moviesNotifyChannelId, channelId)
-    }
-
-    fun getMoviesRoleId(guildId: String): String? {
-        return getString(guildId, Guilds.moviesRoleId)
-    }
-
-    fun setMoviesRoleId(guildId: String, roleId: String?): Boolean {
-        return setString(guildId, Guilds.moviesRoleId, roleId)
     }
 }

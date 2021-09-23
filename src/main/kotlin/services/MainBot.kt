@@ -30,8 +30,6 @@ class MainBot(
     client: Kord
 ) : BaseBot(client) {
 
-    private val moviesDispatcher = MoviesDispatcher(guildsManager, client)
-
     private val gamesDispatcher = GamesDispatcher(
         guildsManager,
         epicGamesService,
@@ -45,7 +43,7 @@ class MainBot(
     private val roleGetterDispatcher = RoleGetterDispatcher(guildsManager, client)
 
     private val addReactionListeners: Set<ReactionAddListener> by lazy {
-        setOf(moviesDispatcher, roleGetterDispatcher)
+        setOf(roleGetterDispatcher)
     }
 
     private val removeReactionListeners: Set<ReactionRemoveListener> by lazy {
@@ -57,7 +55,6 @@ class MainBot(
     }
 
     private val botPrefixPattern = Regex("^${AppEnvironment.BOT_PREFIX}.*", RegexOption.DOT_MATCHES_ALL)
-    private val moviesPattern = Regex("^${moviesDispatcher.getPrefix()}.*", RegexOption.DOT_MATCHES_ALL)
 
     override suspend fun attach() {
         client.on<GuildDeleteEvent> {
@@ -81,16 +78,7 @@ class MainBot(
                 return@on
             }
             val messageText = message.content.removePrefix(AppEnvironment.BOT_PREFIX)
-            val dispatcher = when {
-                moviesPattern.matches(messageText) -> moviesDispatcher
-                else -> commonDispatcher
-            }
-            val trimmedMessage = if (dispatcher is CommonDispatcher) {
-                messageText
-            } else {
-                messageText.removePrefix(dispatcher.getPrefix()).removePrefix(BaseDispatcher.PREFIX_DELIMITER)
-            }
-            dispatcher.onMessageCreate(this, trimmedMessage)
+            commonDispatcher.onMessageCreate(this, messageText)
         }
         client.on<InteractionCreateEvent> {
             println("id: ${interaction.data.data.id.value}; name: ${interaction.data.data.name.value}; values: ${interaction.data.data.values.value}; options: ${interaction.data.data.options.value}")

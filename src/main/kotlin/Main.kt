@@ -1,15 +1,14 @@
 import db.GuildsManager
 import dev.kord.common.annotation.KordPreview
 import dev.kord.core.Kord
-import io.ktor.application.Application
-import io.ktor.server.engine.embeddedServer
-import io.ktor.server.netty.Netty
+import io.ktor.application.*
+import io.ktor.server.engine.*
+import io.ktor.server.netty.*
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import services.*
 import utils.AppEnvironment
-import utils.Commands
 import utils.provideDatabase
 
 fun main(args: Array<String>) {
@@ -34,7 +33,7 @@ fun Application.module() {
         bot.attach()
 
         client.login {
-            listening("${AppEnvironment.BOT_PREFIX}${Commands.Common.HELP}")
+            listening("slash commands :sunglasses:")
         }
     }
 }

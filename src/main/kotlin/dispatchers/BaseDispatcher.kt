@@ -1,7 +1,10 @@
 package dispatchers
 
 import dev.kord.common.Color
-import dev.kord.common.entity.*
+import dev.kord.common.entity.InteractionResponseType
+import dev.kord.common.entity.MessageFlag
+import dev.kord.common.entity.MessageFlags
+import dev.kord.common.entity.Snowflake
 import dev.kord.common.entity.optional.Optional
 import dev.kord.common.entity.optional.optional
 import dev.kord.core.Kord
@@ -10,8 +13,10 @@ import dev.kord.core.entity.Message
 import dev.kord.core.entity.ReactionEmoji
 import dev.kord.core.entity.interaction.Interaction
 import dev.kord.rest.builder.message.create.embed
-import dev.kord.rest.json.request.*
-import utils.AppEnvironment
+import dev.kord.rest.json.request.EmbedAuthorRequest
+import dev.kord.rest.json.request.EmbedRequest
+import dev.kord.rest.json.request.InteractionApplicationCommandCallbackData
+import dev.kord.rest.json.request.InteractionResponseCreateRequest
 
 abstract class BaseDispatcher(protected val client: Kord) {
 
@@ -120,10 +125,6 @@ abstract class BaseDispatcher(protected val client: Kord) {
         }
     }
 
-    suspend fun postErrorMessage(channel: MessageChannelBehavior, message: String, messageColor: Color = magentaColor) {
-        postErrorMessage(channel.id, message, messageColor)
-    }
-
     suspend fun respondWithReaction(message: Message, success: Boolean) {
         if (success) {
             message.deleteOwnReaction(errorEmoji)
@@ -134,24 +135,8 @@ abstract class BaseDispatcher(protected val client: Kord) {
         }
     }
 
-    protected fun getMention(user: DiscordUser) = "<@!${user.id.asString}>"
-
-    protected fun getChannelMention(channelId: String) = "<#${channelId}>"
-
-    fun getCommand(commandName: String, customPrefix: String? = null, format: Boolean = true): String {
-        val commandPrefix = customPrefix ?: dispatcherPrefix
-        val commandText = "${AppEnvironment.BOT_PREFIX}${commandPrefix}${if (commandPrefix.isEmpty()) "" else PREFIX_DELIMITER}${commandName}"
-        return if (format) {
-            "`$commandText`"
-        } else {
-            commandText
-        }
-    }
-
     companion object {
         const val OK_EMOJI_SYMBOL = "\uD83C\uDD97"
         const val ERROR_EMOJI_SYMBOL = "❌"
-
-        const val PREFIX_DELIMITER = "/"
     }
 }

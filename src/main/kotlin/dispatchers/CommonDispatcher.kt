@@ -3,12 +3,13 @@ package dispatchers
 import db.GuildsManager
 import dev.kord.common.Color
 import dev.kord.core.Kord
-import dev.kord.core.behavior.channel.MessageChannelBehavior
-import dev.kord.core.behavior.channel.createEmbed
 import dev.kord.core.entity.Message
 import dev.kord.core.event.message.MessageCreateEvent
 import dev.kord.rest.builder.message.create.embed
-import utils.*
+import utils.Commands
+import utils.commandRegex
+import utils.isSentByAdmin
+import utils.replaceIfMatches
 import java.net.URL
 
 class CommonDispatcher(
@@ -23,7 +24,6 @@ class CommonDispatcher(
         return dispatcherPrefix
     }
 
-    private val help = Commands.Common.HELP.commandRegex()
     private val pick = Commands.Common.PICK.commandRegex(false, RegexOption.DOT_MATCHES_ALL)
     private val locale = Commands.Common.LOCALE.commandRegex(singleWordCommand = false)
     private val roleSet = Regex("^${Commands.Common.ROLE_GETTER}\\s+<@&(\\d+)>\\s+<:(.+):\\d+>.*$")
@@ -31,9 +31,6 @@ class CommonDispatcher(
 
     override suspend fun onMessageCreate(event: MessageCreateEvent, trimmedMessage: String) {
         when {
-            help.matches(trimmedMessage) -> {
-                showHelp(event.message.channel)
-            }
             pick.matches(trimmedMessage) -> {
                 pickRandom(trimmedMessage.removePrefix(Commands.Common.PICK).trim(), event.message)
             }
@@ -58,36 +55,6 @@ class CommonDispatcher(
             }
             poll.matches(trimmedMessage) -> {
                 createPoll(trimmedMessage.removePrefix(Commands.Common.POLL).trim(), event.message)
-            }
-        }
-    }
-
-    private suspend fun showHelp(channel: MessageChannelBehavior) {
-        channel.createEmbed {
-            color = magentaColor
-            field {
-                name = getCommand(Commands.Movies.HELP, customPrefix = "movies")
-                value = "Справка по командам для фильмов"
-            }
-            field {
-                name = getCommand(Commands.Games.HELP, customPrefix = "games")
-                value = "Справка по командам по играм"
-            }
-            field {
-                name = getCommand(Commands.Common.PICK)
-                value = "Выбирает случайный вариант из написанных в команде. Название команды и варианты надо отделять новой строкой (`Shift` + `Enter`)."
-            }
-            field {
-                name = getCommand(Commands.Common.LOCALE)
-                value = "Установка языка сервера. Язык используется в других командах. Пример: `${getCommand(Commands.Common.LOCALE, format = false)} ru`"
-            }
-            field {
-                name = getCommand(Commands.Common.ROLE_GETTER)
-                value = "Создаёт выдачу роли пользователям, которые поставят указанное эмодзи в реакцию под сообщением с этой командой. Пример: `${AppEnvironment.BOT_PREFIX}${Commands.Common.ROLE_GETTER} <выдаваемая роль> <эмодзи>`. Также можно снять роль, убрав свою реакцию."
-            }
-            field {
-                name = getCommand(Commands.Common.POLL)
-                value = "Создаёт голосование с вопросом, написанным после команды текстом."
             }
         }
     }
