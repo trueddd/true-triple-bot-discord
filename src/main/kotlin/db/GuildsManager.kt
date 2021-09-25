@@ -1,16 +1,24 @@
 package db
 
+import kotlinx.coroutines.Dispatchers
 import org.jetbrains.exposed.sql.*
+import org.jetbrains.exposed.sql.transactions.experimental.suspendedTransactionAsync
 import org.jetbrains.exposed.sql.transactions.transaction
 
 class GuildsManager(
     private val database: Database
 ) {
 
-    fun removeGuildsIgnore(ids: List<String>) {
-        return transaction(database) {
-            Guilds.deleteWhere { Guilds.id notInList ids }
-        }
+    suspend fun syncGuilds(ids: List<String>) {
+        suspendedTransactionAsync(Dispatchers.IO, database) {
+            val saved = Guilds.selectAll().map { it[Guilds.id] }
+            Guilds.deleteWhere { Guilds.id inList (saved - ids) }
+            (ids - saved).forEach { guild ->
+                Guilds.insert {
+                    it[id] = guild
+                }
+            }
+        }.await()
     }
 
     fun removeGuild(id: String) {
@@ -38,14 +46,6 @@ class GuildsManager(
                 }.resultedValues?.size?.let { it > 0 } ?: false
             }
         }
-    }
-
-    fun getMinecraftServerIp(guildId: String): String? {
-        return getString(guildId, Guilds.minecraftServerIp)
-    }
-
-    fun setMinecraftServerIp(guildId: String, newIp: String?): Boolean {
-        return setString(guildId, Guilds.minecraftServerIp, newIp)
     }
 
     fun setRoleGetterEmoji(messageId: String, roleId: String, emoji: String): Boolean {
@@ -84,22 +84,6 @@ class GuildsManager(
         }
     }
 
-    fun getMoviesListChannel(guildId: String): String? {
-        return getString(guildId, Guilds.moviesListChannelId)
-    }
-
-    fun setMoviesListChannel(guildId: String, channelId: String?): Boolean {
-        return setString(guildId, Guilds.moviesListChannelId, channelId)
-    }
-
-    fun getWatchedMoviesChannelId(guildId: String): String? {
-        return getString(guildId, Guilds.watchedMoviesChannelId)
-    }
-
-    fun setWatchedMoviesListChannel(guildId: String, channelId: String?): Boolean {
-        return setString(guildId, Guilds.watchedMoviesChannelId, channelId)
-    }
-
     fun getGamesChannelsIds(): List<GameChannel> {
         return transaction(database) {
             Guilds.selectAll().mapNotNull {
@@ -121,21 +105,5 @@ class GuildsManager(
 
     fun setGuildRegion(guildId: String, newRegion: String?): Boolean {
         return setString(guildId, Guilds.region, newRegion)
-    }
-
-    fun getMoviesNotifyChannel(guildId: String): String? {
-        return getString(guildId, Guilds.moviesNotifyChannelId)
-    }
-
-    fun setMoviesNotifyChannel(guildId: String, channelId: String?): Boolean {
-        return setString(guildId, Guilds.moviesNotifyChannelId, channelId)
-    }
-
-    fun getMoviesRoleId(guildId: String): String? {
-        return getString(guildId, Guilds.moviesRoleId)
-    }
-
-    fun setMoviesRoleId(guildId: String, roleId: String?): Boolean {
-        return setString(guildId, Guilds.moviesRoleId, roleId)
     }
 }

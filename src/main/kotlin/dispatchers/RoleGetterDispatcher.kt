@@ -12,9 +12,6 @@ class RoleGetterDispatcher(
     client: Kord
 ) : BaseDispatcher(client), ReactionAddListener, ReactionRemoveListener, MessageDeleteListener {
 
-    override val dispatcherPrefix: String
-        get() = ""
-
     override suspend fun onReactionAdd(event: ReactionAddEvent) {
         val guildId = event.guildId?.asString ?: ""
         val messageId = event.message.id.asString

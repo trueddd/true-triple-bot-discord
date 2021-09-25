@@ -1,7 +1,7 @@
 package utils
 
 import dev.kord.common.entity.Permission
-import dev.kord.core.event.message.MessageCreateEvent
+import dev.kord.core.entity.interaction.Interaction
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -15,19 +15,13 @@ fun String.egsDate(): Date {
     }
 }
 
-fun String.commandRegex(singleWordCommand: Boolean = true, vararg flags: RegexOption): Regex {
-    return Regex("^$this${if (singleWordCommand) "$" else ".*"}", flags.toSet())
-}
+val Interaction.issuedByAdmin: Boolean
+    get() = data.permissions.value?.contains(Permission.Administrator) == true
 
-fun String.replaceIfMatches(regex: Regex, replacement: String): String? {
-    return if (matches(regex)) {
-        replace(regex, replacement)
+fun String.environmentDependentTableName(): String {
+    return if (AppEnvironment.isTestEnv()) {
+        "$this-test"
     } else {
-        null
+        this
     }
-}
-
-suspend fun MessageCreateEvent.isSentByAdmin(): Boolean {
-    val guild = guildId ?: return false
-    return message.author?.asMember(guild)?.getPermissions()?.contains(Permission.Administrator) == true
 }
