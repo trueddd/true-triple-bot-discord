@@ -32,12 +32,8 @@ class GamesDispatcher(
     client: Kord,
 ) : BaseDispatcher(client), InteractionListener {
 
-    override val dispatcherPrefix: String
-        get() = "games"
-
     override suspend fun onInteractionReceived(interaction: Interaction) {
-        val subCommand = interaction.data.data.options.value?.firstOrNull()?.name
-        when (subCommand) {
+        when (interaction.data.data.options.value?.firstOrNull()?.name) {
             Commands.Games.EGS -> {
                 val region = guildsManager.getGuildRegion(interaction.data.guildId.value!!.asString) ?: "ru"
                 val games = epicGamesService.load(listOf(region))?.get(region)

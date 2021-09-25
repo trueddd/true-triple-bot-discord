@@ -2,10 +2,8 @@ package dispatchers
 
 import db.GuildsManager
 import dev.kord.common.Color
-import dev.kord.common.entity.ButtonStyle
 import dev.kord.common.entity.CommandArgument
-import dev.kord.common.entity.ComponentType
-import dev.kord.common.entity.DiscordComponent
+import dev.kord.common.entity.Snowflake
 import dev.kord.common.entity.optional.Optional
 import dev.kord.common.entity.optional.optional
 import dev.kord.core.Kord
@@ -14,47 +12,79 @@ import dev.kord.core.event.message.MessageCreateEvent
 import dev.kord.rest.json.request.EmbedAuthorRequest
 import dev.kord.rest.json.request.EmbedImageRequest
 import dev.kord.rest.json.request.EmbedRequest
+import kotlinx.coroutines.flow.*
 import utils.Commands
-import utils.isSentByAdmin
+import utils.commandArgument
 import utils.issuedByAdmin
-import utils.replaceIfMatches
 import java.net.URL
 
 class CommonDispatcher(
     private val guildsManager: GuildsManager,
     client: Kord,
-) : BaseDispatcher(client), MessageCreateListener, InteractionListener {
+) : BaseDispatcher(client), InteractionListener {
 
-    override val dispatcherPrefix: String
-        get() = ""
-
-    override fun getPrefix(): String {
-        return dispatcherPrefix
-    }
-
-    private val roleSet = Regex("^${Commands.Common.ROLE_GETTER}\\s+<@&(\\d+)>\\s+<:(.+):\\d+>.*$")
+    private val emoteRegex = Regex("<:(?<id>.+):\\d+>")
 
     override suspend fun onInteractionReceived(interaction: Interaction) {
-        val command = interaction.data.data.name.value
-        when (command) {
+        when (interaction.data.data.name.value) {
             Commands.Common.LOCALE -> setLocale(interaction)
             Commands.Common.POLL -> createPoll(interaction)
+            Commands.Common.ROLE_GETTER -> setupRoleGetter(interaction)
         }
     }
 
-    override suspend fun onMessageCreate(event: MessageCreateEvent, trimmedMessage: String) {
+    private suspend fun setupRoleGetter(interaction: Interaction) {
+        if (!interaction.issuedByAdmin) {
+            createTextResponse(
+                interaction,
+                "You are not allowed to use this command.",
+                onlyForUser = true,
+            )
+            return
+        }
+        val messageId = interaction.commandArgument<CommandArgument.StringArgument>("message")?.value
+            ?.let { try { Snowflake(it) } catch (e: Exception) { null } }
+            ?: run {
+                createTextResponse(
+                    interaction,
+                    "Couldn\'t understand which message should be observed",
+                    onlyForUser = true
+                )
+                return
+            }
+        val role = interaction.commandArgument<CommandArgument.RoleArgument>("role")?.value
+            ?: run {
+                createTextResponse(
+                    interaction,
+                    "Couldn\'t understand which role to give",
+                    onlyForUser = true
+                )
+                return
+            }
+        val emote = interaction.commandArgument<CommandArgument.StringArgument>("emote")?.value
+            ?.let { emoteRegex.matchEntire(it)?.groups?.get("id")?.value }
+            ?: run {
+                createTextResponse(
+                    interaction,
+                    "Couldn\'t parse emote",
+                    onlyForUser = true
+                )
+                return
+            }
         when {
-            roleSet.matches(trimmedMessage) -> {
-                if (!event.isSentByAdmin()) {
-                    respondWithReaction(event.message, false)
-                    return
-                }
-                val role = trimmedMessage.replaceIfMatches(roleSet, "$1")
-                val emoji = trimmedMessage.replaceIfMatches(roleSet, "$2")
-                val success = if (role != null && emoji != null) {
-                    guildsManager.setRoleGetterEmoji(event.message.id.asString, role, emoji)
-                } else false
-                respondWithReaction(event.message, success)
+            guildsManager.setRoleGetterEmoji(messageId.asString, role.asString, emote) -> {
+                createTextResponse(
+                    interaction,
+                    "Role setter set up successfully",
+                    onlyForUser = true,
+                )
+            }
+            else -> {
+                createTextResponse(
+                    interaction,
+                    "Something went wrong",
+                    onlyForUser = true,
+                )
             }
         }
     }
@@ -80,12 +110,17 @@ class CommonDispatcher(
             ?.firstOrNull { it.name == "url" }?.value?.value
             ?.let { it as? CommandArgument.StringArgument }?.value
             ?.let { if (it.isUrl()) it else null }
-        val options = interaction.data.data.options.value
-            ?.firstOrNull { it.name == "options" }?.value?.value
-            ?.let { it as? CommandArgument.IntegerArgument }?.value ?: 2
         val author = interaction.user.asUser()
 
-        // todo: make a followup message
+        client.events
+            .filterIsInstance<MessageCreateEvent>()
+            .filter { it.message.data.interaction.value?.id == interaction.id }
+            .take(1)
+            .onEach {
+                client.rest.channel.createReaction(it.message.channelId, it.message.id, "\uD83D\uDC4D")
+                client.rest.channel.createReaction(it.message.channelId, it.message.id, "\uD83D\uDC4E")
+            }
+            .launchIn(client)
         createEmbedResponse(
             interaction,
             EmbedRequest(
@@ -97,18 +132,7 @@ class CommonDispatcher(
                 description = text.optional(),
                 image = link?.let { EmbedImageRequest(it) }?.optional() ?: Optional.Missing(),
             ),
-            components = (1..options).map {
-                DiscordComponent(
-                    ComponentType.Button,
-                    style = ButtonStyle.Primary.optional(),
-                    label = "$it".optional(),
-                    customId = "$it".optional(),
-                )
-            }
         )
-//        client.rest.channel.createReaction(newMessage.channelId, newMessage.id, "\uD83D\uDC4D")
-//        client.rest.channel.createReaction(newMessage.channelId, newMessage.id, "\uD83D\uDC4E")
-//        message.delete()
     }
 
     private suspend fun setLocale(interaction: Interaction) {

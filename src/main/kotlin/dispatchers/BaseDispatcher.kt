@@ -5,12 +5,6 @@ import dev.kord.common.entity.*
 import dev.kord.common.entity.optional.Optional
 import dev.kord.common.entity.optional.optional
 import dev.kord.core.Kord
-import dev.kord.core.behavior.channel.MessageChannelBehavior
-import dev.kord.core.cache.data.ComponentData
-import dev.kord.core.entity.Message
-import dev.kord.core.entity.ReactionEmoji
-import dev.kord.core.entity.component.ActionRowComponent
-import dev.kord.core.entity.component.Component
 import dev.kord.core.entity.interaction.Interaction
 import dev.kord.rest.builder.message.create.embed
 import dev.kord.rest.json.request.EmbedAuthorRequest
@@ -20,33 +14,9 @@ import dev.kord.rest.json.request.InteractionResponseCreateRequest
 
 abstract class BaseDispatcher(protected val client: Kord) {
 
-    protected val magentaColor = Color(255, 0, 255)
+    private val magentaColor = Color(255, 0, 255)
 
-    private val okEmoji: ReactionEmoji by lazy {
-        ReactionEmoji.Unicode(OK_EMOJI_SYMBOL)
-    }
-
-    private val errorEmoji: ReactionEmoji by lazy {
-        ReactionEmoji.Unicode(ERROR_EMOJI_SYMBOL)
-    }
-
-    abstract val dispatcherPrefix: String
-
-    suspend fun postMessage(channelId: Snowflake, message: String, messageColor: Color = magentaColor) {
-        client.rest.channel.createMessage(channelId) {
-            content = ""
-            embed {
-                description = message
-                color = messageColor
-            }
-        }
-    }
-
-    suspend fun postMessage(channel: MessageChannelBehavior, message: String, messageColor: Color = magentaColor) {
-        postMessage(channel.id, message, messageColor)
-    }
-
-    protected suspend fun respondToInteraction(
+    private suspend fun respondToInteraction(
         integration: Interaction,
         data: Optional<InteractionApplicationCommandCallbackData>,
     ) {
@@ -60,9 +30,7 @@ abstract class BaseDispatcher(protected val client: Kord) {
         )
     }
 
-    protected fun createFlags(
-        onlyForUser: Boolean,
-    ): MessageFlags {
+    private fun createFlags(onlyForUser: Boolean): MessageFlags {
         return MessageFlags.Builder()
             .apply {
                 if (onlyForUser) {
@@ -132,20 +100,5 @@ abstract class BaseDispatcher(protected val client: Kord) {
                 }
             }
         }
-    }
-
-    suspend fun respondWithReaction(message: Message, success: Boolean) {
-        if (success) {
-            message.deleteOwnReaction(errorEmoji)
-            message.addReaction(okEmoji)
-        } else {
-            message.deleteOwnReaction(okEmoji)
-            message.addReaction(errorEmoji)
-        }
-    }
-
-    companion object {
-        const val OK_EMOJI_SYMBOL = "\uD83C\uDD97"
-        const val ERROR_EMOJI_SYMBOL = "❌"
     }
 }
