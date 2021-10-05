@@ -119,7 +119,9 @@ class GamesDispatcher(
         }
         when {
             channel == null -> createTextResponse(interaction, "Channel not found", onlyForUser = true)
-            channel.type != ChannelType.GuildText -> createTextResponse(interaction, "You can only pass text channel", onlyForUser = true)
+            channel.type != ChannelType.GuildText && channel.type != ChannelType.GuildNews -> {
+                createTextResponse(interaction, "You can only pass text channel", onlyForUser = true)
+            }
             guildsManager.setGamesChannel(interaction.data.guildId.value!!.asString, channelId.asString) -> {
                 val channelName = channel.name.value ?: channelId
                 createTextResponse(
