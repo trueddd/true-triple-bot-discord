@@ -12,9 +12,9 @@ import dev.kord.common.entity.Snowflake
 import dev.kord.common.entity.optional.optional
 import dev.kord.core.Kord
 import dev.kord.core.entity.interaction.Interaction
-import dev.kord.rest.builder.message.create.embed
 import dev.kord.rest.json.request.*
 import io.ktor.util.*
+import services.CrackedGamesService
 import services.EpicGamesService
 import services.GogGamesService
 import services.SteamGamesService
@@ -29,6 +29,7 @@ class GamesDispatcher(
     private val epicGamesService: EpicGamesService,
     private val steamGamesService: SteamGamesService,
     private val gogGamesService: GogGamesService,
+    private val crackedGamesService: CrackedGamesService,
     client: Kord,
 ) : BaseDispatcher(client), InteractionListener {
 
@@ -59,6 +60,15 @@ class GamesDispatcher(
                     createEmbedResponse(interaction, buildSteamGamesEmbed(games))
                 } else {
                     postErrorMessage(interaction, "Не получилось со Steam\'ом")
+                }
+            }
+            Commands.Games.CRACKED -> {
+                val region = guildsManager.getGuildRegion(interaction.data.guildId.value!!.asString) ?: "ru"
+                val games = crackedGamesService.load(listOf(region))?.get(region)
+                if (games != null) {
+                    createEmbedResponse(interaction, buildCrackedGamesEmbed(games))
+                } else {
+                    postErrorMessage(interaction, "Не получилось с кряками")
                 }
             }
             Commands.Games.SET -> setGamesChannel(interaction)
@@ -266,39 +276,37 @@ class GamesDispatcher(
         )
     }
 
+    private fun buildCrackedGamesEmbed(elements: List<Game>): EmbedRequest {
+        return EmbedRequest(
+            color = Color(66, 182, 29).optional(),
+            author = EmbedAuthorRequest(
+                name = "Cracked games".optional(),
+                url = "https://gamestatus.info/crackedgames".optional(),
+                iconUrl = "https://gamestatus.info/favicon.ico".optional(),
+            ).optional(),
+            fields = elements.map { game ->
+                EmbedFieldRequest(
+                    name = game.title,
+                    value = "[Взломано ${game.crackDate!!.formatContext()}](https://gamestatus.info/${game.slug})",
+                    inline = true.optional(),
+                )
+            }.optional(),
+            footer = EmbedFooterRequest("Powered by GameStatus.info").optional(),
+        )
+    }
     suspend fun showCrackedGames(channelId: Snowflake, elements: List<Game>?) {
-        val messageColor = Color(237, 28, 35)
-        if (elements == null) {
-            postErrorMessage(channelId, "Не получилось с кряками", messageColor)
+        if (elements == null || elements.isEmpty()) {
+            postErrorMessage(channelId, "Не получилось с кряками", Color(66, 182, 29))
             return
         }
-        if (elements.isEmpty()) {
-            return
-        }
-        client.rest.channel.createMessage(channelId) {
-            embed {
-                color = messageColor
-                author {
-                    icon = "https://img7.androidappsapk.co/OurDjLyAKt2YTXvtMPQfHkQd07NmdEOpAwfqy1_cy9pxG3CX6vOu88mVh20TJa30ZdQ=s300"
-                    name = "Последние взломанные игры"
-                    url = "https://crackwatch.com/games"
-                }
-                val today = Date().days()
-                val todayCracks = elements.count { it.crackDate.days() == today }
-                val takeFirst = todayCracks + (if (9 - todayCracks <= 0) 0 else 9 - todayCracks)
-                elements.take(takeFirst).forEach {
-                    field {
-                        name = it.title
-                        value = "[Взломано ${it.crackDate.formatContext()}](https://crackwatch.com/game/${it.slug})"
-                        inline = true
-                    }
-                }
-                footer {
-                    icon = "https://img7.androidappsapk.co/OurDjLyAKt2YTXvtMPQfHkQd07NmdEOpAwfqy1_cy9pxG3CX6vOu88mVh20TJa30ZdQ=s300"
-                    text = "Powered by CrackWatch"
-                }
-            }
-        }
+        client.rest.channel.createMessage(
+            channelId,
+            MultipartMessageCreateRequest(
+                MessageCreateRequest(
+                    embeds = listOf(buildCrackedGamesEmbed(elements)).optional()
+                )
+            )
+        )
     }
 
     private fun LocalDateTime.format(pattern: String = "d MMMM", locale: Locale = Locale("ru")): String? {

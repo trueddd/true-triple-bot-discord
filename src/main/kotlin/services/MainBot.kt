@@ -4,6 +4,7 @@ import Scheduler
 import db.GuildsManager
 import dev.kord.common.annotation.KordPreview
 import dev.kord.common.entity.DiscordPartialGuild
+import dev.kord.common.entity.Snowflake
 import dev.kord.core.Kord
 import dev.kord.core.event.gateway.ReadyEvent
 import dev.kord.core.event.guild.GuildDeleteEvent
@@ -36,6 +37,7 @@ class MainBot(
         epicGamesService,
         steamGamesService,
         gogGamesService,
+        crackedGamesService,
         client,
     )
 
@@ -81,7 +83,7 @@ class MainBot(
 
         if (AppEnvironment.isProdEnv()) {
             client.on<ReadyEvent> {
-//                scheduler.scheduleCracked()
+                scheduler.scheduleCracked()
                 scheduler.scheduleGog()
                 scheduler.scheduleSteam()
                 scheduler.scheduleEgs()
@@ -98,6 +100,7 @@ class MainBot(
                     subCommand(Commands.Games.EGS, "List all free games promotions from EGS")
                     subCommand(Commands.Games.STEAM, "List top selling games from Steam")
                     subCommand(Commands.Games.GOG, "List currently the most popular games from GOG with discounts")
+                    subCommand(Commands.Games.CRACKED, "List of last cracked games")
                     subCommand(Commands.Games.SET, "Schedule game notifications in selected channel") {
                         channel("channel", "Channel where to send game notifications") {
                             required = true
@@ -130,6 +133,12 @@ class MainBot(
                     }
                 }
             }
+        } else {
+            client.createGuildChatInputCommand(
+                Snowflake("884176842783879189"),
+                Commands.Games.CRACKED,
+                "List of last cracked games"
+            )
         }
     }
 
