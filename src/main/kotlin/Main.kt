@@ -1,6 +1,7 @@
 import db.GuildsManager
 import dev.kord.common.annotation.KordPreview
 import dev.kord.core.Kord
+import io.ktor.application.*
 import io.ktor.server.engine.*
 import io.ktor.server.netty.*
 import kotlinx.coroutines.DelicateCoroutinesApi
@@ -11,11 +12,12 @@ import utils.provideDatabase
 
 @Suppress("UNUSED_PARAMETER")
 fun main(args: Array<String>) {
-    embeddedServer(Netty, port = AppEnvironment.getPort(), module = { module() }).start(wait = true)
+    embeddedServer(Netty, port = AppEnvironment.getPort(), module = Application::module).start(wait = true)
 }
 
+@Suppress("unused")
 @OptIn(KordPreview::class, DelicateCoroutinesApi::class)
-fun module() {
+fun Application.module() {
 
     val database = provideDatabase()
     val guildsManager = GuildsManager(database)
