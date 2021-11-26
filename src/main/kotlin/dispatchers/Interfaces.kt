@@ -1,7 +1,6 @@
 package dispatchers
 
 import dev.kord.core.entity.interaction.Interaction
-import dev.kord.core.event.message.MessageCreateEvent
 import dev.kord.core.event.message.MessageDeleteEvent
 import dev.kord.core.event.message.ReactionAddEvent
 import dev.kord.core.event.message.ReactionRemoveEvent

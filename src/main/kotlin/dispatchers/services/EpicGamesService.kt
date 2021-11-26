@@ -1,13 +1,14 @@
-package services
+package dispatchers.services
 
-import data.egs.*
-import io.ktor.client.request.get
+import data.egs.FreeGamesResponse
+import data.egs.GiveAwayGame
+import data.egs.OfferDates
+import io.ktor.client.request.*
 import io.ktor.util.*
-import org.jetbrains.exposed.sql.*
 import utils.egsDate
 import java.time.LocalDateTime
 
-class EpicGamesService(database: Database) : BaseGamesService<GiveAwayGame>(database) {
+class EpicGamesService : BaseGamesService<GiveAwayGame>() {
 
     private val baseUrl = "https://store-site-backend-static.ak.epicgames.com/freeGamesPromotions?locale=en-US"
 

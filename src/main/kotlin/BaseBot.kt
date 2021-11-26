@@ -1,5 +1,3 @@
-package services
-
 import dev.kord.core.Kord
 
 abstract class BaseBot(

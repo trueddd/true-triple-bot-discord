@@ -1,13 +1,12 @@
-package services
+package dispatchers.services
 
 import data.gog.GogOnSaleResponse
 import data.gog.Product
 import data.gog.prices.GogPricesResponse
 import data.gog.prices.Price
 import io.ktor.client.request.*
-import org.jetbrains.exposed.sql.Database
 
-class GogGamesService(database: Database) : BaseGamesService<Product>(database) {
+class GogGamesService : BaseGamesService<Product>() {
 
     private val storeUrl = "https://www.gog.com/games/ajax/filtered?mediaType=game&page=1&price=discounted&sort=popularity"
     private val pricesUrl = "https://api.gog.com/products/prices"

@@ -14,10 +14,10 @@ application {
 repositories {
     jcenter()
     mavenLocal()
-    maven { url = uri("http://dl.bintray.com/kotlin/kotlin-eap") }
-    maven { url = uri("https://oss.sonatype.org/content/repositories/snapshots") }
-    maven { url = uri("http://kotlin.bintray.com/ktor") }
-    maven { url = uri("https://dl.bintray.com/kotlin/kotlinx") }
+    maven(url = "https://dl.bintray.com/kotlin/kotlin-eap")
+    maven(url = "https://oss.sonatype.org/content/repositories/snapshots")
+    maven(url = "https://dl.bintray.com/kotlin/ktor/")
+    maven(url = "https://dl.bintray.com/kotlin/kotlinx")
     maven(url = "https://dl.bintray.com/kordlib/Kord")
 }
 
