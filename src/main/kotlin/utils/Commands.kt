@@ -9,6 +9,7 @@ object Commands {
         const val STEAM = "steam"
         const val GOG = "gog"
         const val CRACKED = "cracked"
+        const val NINTENDO = "nintendo"
     }
     object Common {
         const val LOCALE = "locale"

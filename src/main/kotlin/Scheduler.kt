@@ -2,11 +2,9 @@ import db.GuildsManager
 import dev.kord.common.entity.Snowflake
 import dev.kord.core.Kord
 import dispatchers.GamesDispatcher
+import dispatchers.NintendoDispatcher
 import kotlinx.coroutines.*
-import services.CrackedGamesService
-import services.EpicGamesService
-import services.GogGamesService
-import services.SteamGamesService
+import services.*
 import java.time.Duration
 import java.time.LocalDateTime
 import java.time.temporal.ChronoUnit
@@ -18,6 +16,7 @@ class Scheduler(
     private val steamGamesService: SteamGamesService,
     private val gogGamesService: GogGamesService,
     private val crackedGamesService: CrackedGamesService,
+    private val nintendoDispatcher: NintendoDispatcher,
     client: Kord,
 ) : CoroutineScope {
 
@@ -31,6 +30,7 @@ class Scheduler(
         steamGamesService,
         gogGamesService,
         crackedGamesService,
+        nintendoDispatcher,
         client,
     )
 
@@ -96,6 +96,27 @@ class Scheduler(
                         e.printStackTrace()
                     }
                 }
+                delay(Duration.ofHours(24).toMillis())
+            } while (true)
+        }
+    }
+
+    fun scheduleNintendo() {
+        // schedule GOG notifications
+        launch {
+            delay(countDelayTo(19, tag = "ns"))
+            do {
+                val gamesGuildsAndChannels = guildsManager.getGamesChannelsIds()
+                val games = nintendoDispatcher.service.load(gamesGuildsAndChannels.map { it.region }.distinct())
+                gamesGuildsAndChannels.forEach {
+                    val gamesForRegion = games?.get(it.region)
+                    try {
+                        nintendoDispatcher.postGamesEmbed(Snowflake(it.channelId), gamesForRegion)
+                    } catch (e: Exception) {
+                        e.printStackTrace()
+                    }
+                }
+
                 delay(Duration.ofHours(24).toMillis())
             } while (true)
         }

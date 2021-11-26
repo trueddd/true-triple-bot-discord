@@ -14,10 +14,7 @@ import dev.kord.core.Kord
 import dev.kord.core.entity.interaction.Interaction
 import dev.kord.rest.json.request.*
 import io.ktor.util.*
-import services.CrackedGamesService
-import services.EpicGamesService
-import services.GogGamesService
-import services.SteamGamesService
+import services.*
 import utils.Commands
 import utils.issuedByAdmin
 import java.time.LocalDateTime
@@ -30,6 +27,7 @@ class GamesDispatcher(
     private val steamGamesService: SteamGamesService,
     private val gogGamesService: GogGamesService,
     private val crackedGamesService: CrackedGamesService,
+    private val nintendoDispatcher: NintendoDispatcher,
     client: Kord,
 ) : BaseDispatcher(client), InteractionListener {
 
@@ -70,6 +68,11 @@ class GamesDispatcher(
                 } else {
                     postErrorMessage(interaction, "Не получилось с кряками")
                 }
+            }
+            Commands.Games.NINTENDO -> {
+                val region = guildsManager.getGuildRegion(interaction.data.guildId.value!!.asString) ?: "ru"
+                val games = nintendoDispatcher.service.load(listOf(region))?.get(region)
+                nintendoDispatcher.postInteractionResponse(interaction, games)
             }
             Commands.Games.SET -> setGamesChannel(interaction)
             Commands.Games.UNSET -> unsetGamesChannel(interaction)

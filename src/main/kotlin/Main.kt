@@ -20,10 +20,10 @@ fun Application.module() {
 
     val database = provideDatabase()
     val guildsManager = GuildsManager(database)
-    val epicGamesService = EpicGamesService(database)
-    val steamGamesService = SteamGamesService(database)
-    val gogGamesService = GogGamesService(database)
-    val crackedGamesService = CrackedGamesService(database)
+    val epicGamesService = EpicGamesService()
+    val steamGamesService = SteamGamesService()
+    val gogGamesService = GogGamesService()
+    val crackedGamesService = CrackedGamesService()
 
     GlobalScope.launch {
         val client = Kord(AppEnvironment.getBotSecret())

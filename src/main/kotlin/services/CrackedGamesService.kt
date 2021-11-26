@@ -7,7 +7,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.jetbrains.exposed.sql.Database
 
-class CrackedGamesService(database: Database) : BaseGamesService<Game>(database) {
+class CrackedGamesService : BaseGamesService<Game>() {
 
     private val baseUrl = "https://gamestatus.info/back/api/gameinfo/game/"
 

@@ -8,10 +8,9 @@ import data.steam.PriceOverview
 import data.steam.SteamGame
 import data.steam.SteamGamePrice
 import io.ktor.client.request.*
-import org.jetbrains.exposed.sql.Database
 import org.jsoup.Jsoup
 
-class SteamGamesService(database: Database) : BaseGamesService<SteamGame>(database) {
+class SteamGamesService : BaseGamesService<SteamGame>() {
 
     private val storeUrl = "https://store.steampowered.com/specials#p=0&tab=TopSellers"
     private val pricesUrl = "https://store.steampowered.com/api/appdetails/"

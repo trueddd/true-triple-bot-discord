@@ -32,12 +32,15 @@ class MainBot(
     client: Kord
 ) : BaseBot(client) {
 
+    private val nintendoDispatcher = NintendoDispatcher(client)
+
     private val gamesDispatcher = GamesDispatcher(
         guildsManager,
         epicGamesService,
         steamGamesService,
         gogGamesService,
         crackedGamesService,
+        nintendoDispatcher,
         client,
     )
 
@@ -54,7 +57,7 @@ class MainBot(
     }
 
     private val scheduler: Scheduler by lazy {
-        Scheduler(guildsManager, epicGamesService, steamGamesService, gogGamesService, crackedGamesService, client)
+        Scheduler(guildsManager, epicGamesService, steamGamesService, gogGamesService, crackedGamesService, nintendoDispatcher, client)
     }
 
     override suspend fun attach() {
@@ -87,6 +90,7 @@ class MainBot(
                 scheduler.scheduleGog()
                 scheduler.scheduleSteam()
                 scheduler.scheduleEgs()
+                scheduler.scheduleNintendo()
             }
         }
 
@@ -101,6 +105,7 @@ class MainBot(
                     subCommand(Commands.Games.STEAM, "List top selling games from Steam")
                     subCommand(Commands.Games.GOG, "List currently the most popular games from GOG with discounts")
                     subCommand(Commands.Games.CRACKED, "List of last cracked games")
+                    subCommand(Commands.Games.NINTENDO, "List games from Nintendo Store with discount")
                     subCommand(Commands.Games.SET, "Schedule game notifications in selected channel") {
                         channel("channel", "Channel where to send game notifications") {
                             required = true
@@ -136,8 +141,8 @@ class MainBot(
         } else {
             client.createGuildChatInputCommand(
                 Snowflake("884176842783879189"),
-                Commands.Games.CRACKED,
-                "List of last cracked games"
+                "test",
+                "test command",
             )
         }
     }
