@@ -1,11 +1,10 @@
-package services
+package dispatchers.services
 
 import com.google.gson.GsonBuilder
 import data.cracked.*
 import io.ktor.client.request.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import org.jetbrains.exposed.sql.Database
 
 class CrackedGamesService : BaseGamesService<Game>() {
 

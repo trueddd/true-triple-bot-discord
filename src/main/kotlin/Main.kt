@@ -1,34 +1,29 @@
 import db.GuildsManager
 import dev.kord.common.annotation.KordPreview
 import dev.kord.core.Kord
-import io.ktor.application.*
 import io.ktor.server.engine.*
 import io.ktor.server.netty.*
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
-import services.*
 import utils.AppEnvironment
 import utils.provideDatabase
 
+@Suppress("UNUSED_PARAMETER")
 fun main(args: Array<String>) {
-    embeddedServer(Netty, port = AppEnvironment.getPort(), module = Application::module).start(wait = true)
+    embeddedServer(Netty, port = AppEnvironment.getPort(), module = { module() }).start(wait = true)
 }
 
 @OptIn(KordPreview::class, DelicateCoroutinesApi::class)
-fun Application.module() {
+fun module() {
 
     val database = provideDatabase()
     val guildsManager = GuildsManager(database)
-    val epicGamesService = EpicGamesService()
-    val steamGamesService = SteamGamesService()
-    val gogGamesService = GogGamesService()
-    val crackedGamesService = CrackedGamesService()
 
     GlobalScope.launch {
         val client = Kord(AppEnvironment.getBotSecret())
 
-        val bot = MainBot(guildsManager, epicGamesService, steamGamesService, gogGamesService, crackedGamesService, client)
+        val bot = MainBot(guildsManager, client)
         bot.checkGuilds()
         bot.attach()
 

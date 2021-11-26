@@ -1,4 +1,4 @@
-package services
+package dispatchers.services
 
 abstract class BaseGamesService<T> : BaseService() {
 

@@ -1,6 +1,3 @@
-package services
-
-import Scheduler
 import db.GuildsManager
 import dev.kord.common.annotation.KordPreview
 import dev.kord.common.entity.DiscordPartialGuild
@@ -19,27 +16,28 @@ import dev.kord.rest.builder.interaction.string
 import dev.kord.rest.builder.interaction.subCommand
 import dev.kord.rest.route.Position
 import dispatchers.*
+import dispatchers.games.*
 import utils.AppEnvironment
 import utils.Commands
 
 @KordPreview
 class MainBot(
     private val guildsManager: GuildsManager,
-    private val epicGamesService: EpicGamesService,
-    private val steamGamesService: SteamGamesService,
-    private val gogGamesService: GogGamesService,
-    private val crackedGamesService: CrackedGamesService,
     client: Kord
 ) : BaseBot(client) {
 
+    private val egsDispatcher = EgsDispatcher(client)
+    private val steamDispatcher = SteamDispatcher(client)
+    private val gogDispatcher = GogDispatcher(client)
+    private val crackedDispatcher = CrackedDispatcher(client)
     private val nintendoDispatcher = NintendoDispatcher(client)
 
     private val gamesDispatcher = GamesDispatcher(
         guildsManager,
-        epicGamesService,
-        steamGamesService,
-        gogGamesService,
-        crackedGamesService,
+        egsDispatcher,
+        steamDispatcher,
+        gogDispatcher,
+        crackedDispatcher,
         nintendoDispatcher,
         client,
     )
@@ -57,7 +55,7 @@ class MainBot(
     }
 
     private val scheduler: Scheduler by lazy {
-        Scheduler(guildsManager, epicGamesService, steamGamesService, gogGamesService, crackedGamesService, nintendoDispatcher, client)
+        Scheduler(guildsManager, egsDispatcher, steamDispatcher, gogDispatcher, crackedDispatcher, nintendoDispatcher)
     }
 
     override suspend fun attach() {

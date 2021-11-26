@@ -1,4 +1,4 @@
-package dispatchers
+package dispatchers.games
 
 import dev.kord.common.Color
 import dev.kord.common.entity.Snowflake
@@ -8,9 +8,13 @@ import dev.kord.core.entity.interaction.Interaction
 import dev.kord.rest.json.request.EmbedRequest
 import dev.kord.rest.json.request.MessageCreateRequest
 import dev.kord.rest.json.request.MultipartMessageCreateRequest
-import services.BaseGamesService
+import dispatchers.BaseDispatcher
+import dispatchers.services.BaseGamesService
+import io.ktor.util.*
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
+import java.util.*
 
-// todo: refactor game dispatchers to inherit this class
 abstract class BaseGameDispatcher<T>(
     client: Kord,
 ) : BaseDispatcher(client) {
@@ -46,5 +50,28 @@ abstract class BaseGameDispatcher<T>(
         } else {
             createEmbedResponse(interaction, buildEmbed(data))
         }
+    }
+
+    protected fun LocalDateTime.format(pattern: String = "d MMMM", locale: Locale = Locale("ru")): String? {
+        return try {
+            val outFormatter = DateTimeFormatter.ofPattern(pattern, locale)
+            outFormatter.format(this)
+        } catch (e: Exception) {
+            e.printStackTrace()
+            null
+        }
+    }
+
+    protected fun Date.formatContext(pattern: String = "d MMMM", locale: Locale = Locale("ru")): String? {
+        val todayDays = Date().days()
+        return when (this.days()) {
+            todayDays -> "сегодня"
+            todayDays - 1 -> "вчера"
+            else -> this.toLocalDateTime().format(pattern, locale)
+        }
+    }
+
+    protected fun Date.days(): Long {
+        return this.time / 86_400_000
     }
 }

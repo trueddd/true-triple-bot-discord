@@ -1,4 +1,4 @@
-package services
+package dispatchers.services
 
 import data.nintendo.Game
 import data.nintendo.Response

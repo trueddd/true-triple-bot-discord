@@ -1,4 +1,4 @@
-package services
+package dispatchers.services
 
 import com.google.gson.GsonBuilder
 import com.google.gson.reflect.TypeToken

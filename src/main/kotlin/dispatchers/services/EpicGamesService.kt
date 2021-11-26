@@ -1,4 +1,4 @@
-package services
+package dispatchers.services
 
 import data.egs.FreeGamesResponse
 import data.egs.GiveAwayGame

@@ -1,4 +1,4 @@
-package dispatchers
+package dispatchers.games
 
 import data.nintendo.Game
 import dev.kord.common.Color
@@ -7,8 +7,8 @@ import dev.kord.core.Kord
 import dev.kord.rest.json.request.EmbedAuthorRequest
 import dev.kord.rest.json.request.EmbedFieldRequest
 import dev.kord.rest.json.request.EmbedRequest
-import services.BaseGamesService
-import services.NintendoGamesService
+import dispatchers.services.BaseGamesService
+import dispatchers.services.NintendoGamesService
 
 class NintendoDispatcher(kord: Kord) : BaseGameDispatcher<Game>(kord) {
 

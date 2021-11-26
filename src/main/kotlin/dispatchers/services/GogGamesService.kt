@@ -1,4 +1,4 @@
-package services
+package dispatchers.services
 
 import data.gog.GogOnSaleResponse
 import data.gog.Product
